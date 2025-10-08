@@ -18,7 +18,6 @@ export type Playlist = {
   id: string;
   name: string;
   description: string;
-  thumbnailUrl: string;
   videoIds: string[];
 };
 

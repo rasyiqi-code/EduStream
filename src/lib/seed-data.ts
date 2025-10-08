@@ -3,7 +3,7 @@ import { serverTimestamp } from 'firebase/firestore';
 
 // Note: The 'id' properties will be used as the document IDs in Firestore.
 
-export const demoVideos: Omit<Video, 'uploadDate'>[] = [
+export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
   {
     id: 'intro-to-algebra',
     title: 'Introduction to Algebra',
@@ -51,21 +51,18 @@ export const demoPlaylists: Playlist[] = [
     id: 'cs-101',
     name: 'Computer Science 101',
     description: 'Fundamental concepts of computer science, from algorithms to data structures.',
-    thumbnailUrl: 'https://picsum.photos/seed/cs-playlist/320/180',
     videoIds: ['intro-to-algebra', 'what-is-an-algorithm'],
   },
   {
     id: 'history-of-art',
     name: 'History of Art',
     description: 'A journey through the most significant art movements in history.',
-    thumbnailUrl: 'https://picsum.photos/seed/art-playlist/320/180',
     videoIds: ['renaissance-art'],
   },
   {
     id: 'ancient-civilizations',
     name: 'Ancient Civilizations',
     description: 'Explore the rise and fall of great empires of the ancient world.',
-    thumbnailUrl: 'https://picsum.photos/seed/history-playlist/320/180',
     videoIds: ['ancient-rome'],
   },
 ];
