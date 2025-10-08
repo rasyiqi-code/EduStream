@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 function GoogleIcon() {
   return (
@@ -24,23 +25,29 @@ export default function LoginPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      router.push('/');
-    }
-  }, [user, router]);
+  const { toast } = useToast();
 
   const handleSignIn = async () => {
-    if (!auth || !firestore) return;
-
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
-    
-    // signInWithPopup can still throw errors for non-permission issues (e.g., popup closed).
-    // We let these bubble up for now or handle them separately if needed.
-    // The permission error on setDoc will be caught by the non-blocking handler.
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
+    try {
+      await signInWithPopup(auth, provider);
+      // The user profile creation will be handled by the useEffect below
+    } catch (error: any) {
+      // Handle non-permission errors from signInWithPopup (e.g., popup closed by user)
+      if (error.code !== 'auth/popup-closed-by-user') {
+          toast({
+            variant: "destructive",
+            title: "Sign-in Failed",
+            description: "Could not sign in with Google. Please try again.",
+          });
+          console.error("Google Sign-In Error:", error);
+      }
+    }
+  };
+
+  const updateUserProfile = useCallback((user: any) => {
+    if (!firestore || !user) return;
 
     const userProfile: UserProfile = {
       uid: user.uid,
@@ -50,11 +57,20 @@ export default function LoginPage() {
     };
     
     const userDocRef = doc(firestore, 'users', user.uid);
-    // The FirestorePermissionError will be emitted by this non-blocking function.
+    // The FirestorePermissionError will be emitted by this non-blocking function
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
-  };
+  }, [firestore]);
 
-  if (isUserLoading || user) {
+
+  useEffect(() => {
+    // When user object is available after sign-in, update profile and redirect.
+    if (user) {
+      updateUserProfile(user);
+      router.push('/');
+    }
+  }, [user, router, updateUserProfile]);
+
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -62,6 +78,17 @@ export default function LoginPage() {
         </div>
       </div>
     );
+  }
+  
+  // If user is somehow already logged in but hasn't been redirected yet, show loading.
+  if (user) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+                <p>Redirecting...</p>
+            </div>
+        </div>
+      )
   }
 
   return (
@@ -75,7 +102,7 @@ export default function LoginPage() {
           <CardDescription>Sign in to continue to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" className="w-full" onClick={handleSignIn}>
+          <Button variant="outline" className="w-full" onClick={handleSignIn} disabled={isUserLoading}>
             <GoogleIcon />
             Sign in with Google
           </Button>
