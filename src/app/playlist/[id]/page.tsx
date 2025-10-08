@@ -199,7 +199,7 @@ function PlaylistPageContent({ id }: { id: string }) {
                                             <h4 className="font-semibold text-sm line-clamp-2">{video.title}</h4>
                                             <p className="text-xs text-muted-foreground">{video.channel}</p>
                                         </div>
-                                    </A-Frame>
+                                    </Link>
                                 );
                             })}
                         </div>
