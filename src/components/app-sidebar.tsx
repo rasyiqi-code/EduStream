@@ -31,21 +31,6 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="pt-4 md:pt-0">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === "/"}
-              tooltip="Home"
-            >
-              <Link href="/">
-                <Home />
-                <span>Home</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarSeparator />
         <SidebarGroup>
           <SidebarGroupLabel>Playlists</SidebarGroupLabel>
           <SidebarMenu>
