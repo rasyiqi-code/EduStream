@@ -1,4 +1,6 @@
 "use client";
+
+import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
@@ -52,21 +54,7 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     const { data: suggested, isLoading } = useCollection<Video>(suggestedQuery);
     
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Up Next</h2>
-                {Array.from({length: 5}).map((_, i) => (
-                    <div key={i} className="flex items-start gap-4">
-                        <Skeleton className="w-40 h-[90px] rounded-lg" />
-                        <div className='flex-1 space-y-2'>
-                            <Skeleton className="h-4 w-4/5" />
-                            <Skeleton className="h-4 w-2/5" />
-                            <Skeleton className="h-4 w-3/5" />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        )
+        return <SuggestedVideosSkeleton />;
     }
     
     return (
@@ -94,6 +82,24 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
+function SuggestedVideosSkeleton() {
+    return (
+        <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Up Next</h2>
+            {Array.from({length: 5}).map((_, i) => (
+                <div key={i} className="flex items-start gap-4">
+                    <Skeleton className="w-40 h-[90px] rounded-lg" />
+                    <div className='flex-1 space-y-2'>
+                        <Skeleton className="h-4 w-4/5" />
+                        <Skeleton className="h-4 w-2/5" />
+                        <Skeleton className="h-4 w-3/5" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 function WatchPageSkeleton() {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -112,27 +118,14 @@ function WatchPageSkeleton() {
                 </div>
             </div>
             <aside className="lg:col-span-1">
-                <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Up Next</h2>
-                    {Array.from({length: 5}).map((_, i) => (
-                        <div key={i} className="flex items-start gap-4">
-                            <Skeleton className="w-40 h-[90px] rounded-lg" />
-                            <div className='flex-1 space-y-2'>
-                                <Skeleton className="h-4 w-4/5" />
-                                <Skeleton className="h-4 w-2/5" />
-                                <Skeleton className="h-4 w-3/5" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <SuggestedVideosSkeleton />
             </aside>
         </div>
     );
 }
 
-export default function WatchPage({ params }: { params: { id: string } }) {
+function WatchPageContent({ id }: { id: string }) {
     const firestore = useFirestore();
-    const { id } = params;
 
     const videoRef = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -145,14 +138,8 @@ export default function WatchPage({ params }: { params: { id: string } }) {
         return <WatchPageSkeleton />;
     }
     
-    if (!isLoading && !video) {
-        notFound();
-    }
-
     if (!video) {
-        // This case should be covered by the one above, but as a fallback,
-        // we can show the skeleton or a message.
-        return <WatchPageSkeleton />;
+        notFound();
     }
 
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
@@ -194,4 +181,14 @@ export default function WatchPage({ params }: { params: { id: string } }) {
           </aside>
         </div>
     );
+}
+
+
+export default function WatchPage({ params }: { params: { id: string } }) {
+  const { id } = React.use(params);
+  return (
+    <Suspense fallback={<WatchPageSkeleton />}>
+      <WatchPageContent id={id} />
+    </Suspense>
+  );
 }

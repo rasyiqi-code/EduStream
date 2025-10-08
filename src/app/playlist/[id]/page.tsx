@@ -1,5 +1,6 @@
 "use client";
 
+import React, { Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -80,10 +81,9 @@ function PlaylistPageSkeleton() {
     )
 }
 
-export default function PlaylistPage({ params }: { params: { id: string } }) {
+function PlaylistPageContent({ id }: { id: string }) {
     const firestore = useFirestore();
     const searchParams = useSearchParams();
-    const { id } = params;
 
     const playlistRef = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -104,16 +104,12 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
 
     const currentVideo = videos?.find(v => v.id === currentVideoId);
 
-    if (isPlaylistLoading || (playlist?.videoIds && playlist.videoIds.length > 0 && areVideosLoading)) {
+    if (isPlaylistLoading || (playlist && playlist.videoIds.length > 0 && areVideosLoading)) {
         return <PlaylistPageSkeleton />;
     }
 
-    if (!isPlaylistLoading && !playlist) {
-        notFound();
-    }
-    
     if (!playlist) {
-        return <PlaylistPageSkeleton />;
+        notFound();
     }
     
     const orderedVideos = playlist.videoIds.map(id => videos?.find(v => v.id === id)).filter((v): v is Video => !!v);
@@ -183,4 +179,13 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
             </aside>
         </div>
     )
+}
+
+export default function PlaylistPage({ params }: { params: { id: string } }) {
+  const { id } = React.use(params);
+  return (
+    <Suspense fallback={<PlaylistPageSkeleton />}>
+      <PlaylistPageContent id={id} />
+    </Suspense>
+  );
 }
