@@ -1,3 +1,70 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "video-thumb-1",
+      "description": "Abstract programming code on a screen",
+      "imageUrl": "https://picsum.photos/seed/1/640/360",
+      "imageHint": "code abstract"
+    },
+    {
+      "id": "video-thumb-2",
+      "description": "A person painting on a canvas",
+      "imageUrl": "https://picsum.photos/seed/2/640/360",
+      "imageHint": "art painting"
+    },
+    {
+      "id": "video-thumb-3",
+      "description": "A historical map and compass",
+      "imageUrl": "https://picsum.photos/seed/3/640/360",
+      "imageHint": "history map"
+    },
+    {
+      "id": "video-thumb-4",
+      "description": "Beakers and test tubes in a science lab",
+      "imageUrl": "https://picsum.photos/seed/4/640/360",
+      "imageHint": "science lab"
+    },
+    {
+      "id": "video-thumb-5",
+      "description": "A person writing musical notes",
+      "imageUrl": "https://picsum.photos/seed/5/640/360",
+      "imageHint": "music notes"
+    },
+    {
+      "id": "video-thumb-6",
+      "description": "Someone reading a book in a library",
+      "imageUrl": "https://picsum.photos/seed/6/640/360",
+      "imageHint": "library book"
+    },
+    {
+      "id": "playlist-thumb-cs",
+      "description": "A motherboard circuit",
+      "imageUrl": "https://picsum.photos/seed/cs-playlist/320/180",
+      "imageHint": "computer circuit"
+    },
+    {
+      "id": "playlist-thumb-history",
+      "description": "Ancient ruins",
+      "imageUrl": "https://picsum.photos/seed/history-playlist/320/180",
+      "imageHint": "ancient ruins"
+    },
+    {
+      "id": "channel-avatar-1",
+      "description": "Avatar for CodeAcademy",
+      "imageUrl": "https://picsum.photos/seed/ca/48/48",
+      "imageHint": "logo letter C"
+    },
+    {
+      "id": "channel-avatar-2",
+      "description": "Avatar for ArtExplorers",
+      "imageUrl": "https://picsum.photos/seed/ae/48/48",
+      "imageHint": "logo letter A"
+    },
+    {
+      "id": "channel-avatar-3",
+      "description": "Avatar for HistoryUncovered",
+      "imageUrl": "https://picsum.photos/seed/hu/48/48",
+      "imageHint": "logo letter H"
+    }
+  ]
 }
