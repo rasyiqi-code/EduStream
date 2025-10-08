@@ -1,15 +1,38 @@
 {
   "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User Profile",
+      "type": "object",
+      "description": "Represents a user's profile in the application.",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The unique ID of the user from Firebase Authentication."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": ["uid", "email"]
+    },
     "Video": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Video",
       "type": "object",
       "description": "Represents a video in the EduStream platform.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Video entity."
-        },
         "title": {
           "type": "string",
           "description": "Title of the video."
@@ -18,18 +41,33 @@
           "type": "string",
           "description": "Description of the video content."
         },
-        "url": {
+        "videoUrl": {
           "type": "string",
-          "description": "URL of the video (direct MP4 URL or YouTube embed code)."
+          "description": "URL of the video (MP4 URL)."
+        },
+        "youtubeId": {
+          "type": "string",
+          "description": "ID of the YouTube video."
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "URL of the video thumbnail."
         },
         "uploadDate": {
-          "type": "string",
-          "description": "Date and time when the video was uploaded.",
-          "format": "date-time"
+          "type": "object",
+          "description": "Timestamp when the video was uploaded."
         },
         "duration": {
           "type": "number",
           "description": "Duration of the video in seconds."
+        },
+        "channel": {
+          "type": "string",
+          "description": "Name of the channel or user who uploaded the video."
+        },
+        "channelAvatarUrl": {
+          "type": "string",
+          "description": "URL of the channel's avatar."
         },
         "playlistIds": {
           "type": "array",
@@ -40,12 +78,13 @@
         }
       },
       "required": [
-        "id",
         "title",
         "description",
-        "url",
+        "thumbnailUrl",
         "uploadDate",
-        "duration"
+        "duration",
+        "channel",
+        "channelAvatarUrl"
       ]
     },
     "Playlist": {
@@ -89,12 +128,27 @@
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "google.com"
     ]
   },
   "firestore": {
     "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores public profile information for each user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique ID of the user, same as their Firebase Auth UID."
+            }
+          ]
+        }
+      },
       {
         "path": "/videos/{videoId}",
         "definition": {
@@ -127,7 +181,6 @@
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to be simple and scalable. It is built around two core entities: `Videos` and `Playlists`.  A top-level collection is created for each, enabling easy querying and management.  The N:N relationship between Videos and Playlists are managed via the denormalized `playlistIds` and `videoIds` array fields within the Video and Playlist documents, respectively.  This is acceptable because authorization is simple: any authenticated user can `list` videos, but only an admin could `create`, `update`, and `delete` videos. \n\n**Authorization Independence (CRITICAL):** The denormalized arrays are the key to achieving Authorization Independence. There is no need to `get()` any parent document to validate access. All authorization checks are based on the properties of the document itself.\n\n**QAPs (Rules are not Filters):**  The chosen structure supports efficient `list` operations. Since all videos are stored in a single collection, querying for all videos is straightforward.  Access to videos could be controlled via a separate admin role collection or a boolean within the video itself, but this is outside of the scope of the prompt.\n\n**Future Considerations:** For more complex role-based access control scenarios (e.g., different user roles having different access levels to playlists), consider introducing a dedicated `members` map on the Playlist documents, which could then be further expanded to include group-based access control if the application evolves."
+    ]
   }
 }

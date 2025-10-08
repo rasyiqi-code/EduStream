@@ -1,9 +1,13 @@
+'use client';
 import Image from 'next/image';
 import Link from 'next/link';
-import { videos } from "@/lib/data";
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound } from 'next/navigation';
 import React from 'react';
+import { doc, collection, query, where, limit } from 'firebase/firestore';
+import type { Video } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
     return (
@@ -35,12 +39,41 @@ function MP4Player({ videoUrl }: { videoUrl: string }) {
 }
 
 function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
-    const suggested = videos.filter(v => v.id !== currentVideoId).slice(0, 5);
+    const firestore = useFirestore();
+
+    const suggestedQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'videos'), 
+            where('__name__', '!=', currentVideoId), 
+            limit(5)
+        );
+    }, [firestore, currentVideoId]);
+
+    const { data: suggested, isLoading } = useCollection<Video>(suggestedQuery);
+    
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Up Next</h2>
+                {Array.from({length: 5}).map((_, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                        <Skeleton className="w-40 h-[90px] rounded-lg" />
+                        <div className='flex-1 space-y-2'>
+                            <Skeleton className="h-4 w-4/5" />
+                            <Skeleton className="h-4 w-2/5" />
+                            <Skeleton className="h-4 w-3/5" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
     
     return (
         <div className="space-y-4">
             <h2 className="text-xl font-semibold">Up Next</h2>
-            {suggested.map((video) => (
+            {suggested?.map((video) => (
                 <Link href={`/watch/${video.id}`} key={video.id} className="flex items-start gap-4 group">
                     <div className="w-40 aspect-video overflow-hidden rounded-lg shrink-0">
                          <Image
@@ -55,7 +88,6 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
                     <div>
                         <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{video.title}</h4>
                         <p className="text-xs text-muted-foreground mt-1">{video.channel}</p>
-                        <p className="text-xs text-muted-foreground">{video.views} views</p>
                     </div>
                 </Link>
             ))}
@@ -63,51 +95,86 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
-export default function WatchPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
-  const video = videos.find((v) => v.id === id);
+function WatchPageContent({ id }: { id: string }) {
+    const firestore = useFirestore();
+    const videoRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'videos', id);
+    }, [firestore, id]);
+    
+    const { data: video, isLoading } = useDoc<Video>(videoRef);
 
-  if (!video) {
-    notFound();
-  }
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-      <div className="lg:col-span-2">
-        {video.youtubeId ? (
-          <YouTubePlayer videoId={video.youtubeId} title={video.title} />
-        ) : video.videoUrl ? (
-          <MP4Player videoUrl={video.videoUrl} />
-        ) : (
-          <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
-            <p>Video source not available.</p>
+    if (isLoading) {
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+            <div className="lg:col-span-2">
+              <Skeleton className="w-full aspect-video rounded-xl" />
+              <div className="mt-4 space-y-4">
+                  <Skeleton className="h-8 w-3/4" />
+                  <div className="flex items-center gap-4">
+                      <Skeleton className="h-12 w-12 rounded-full" />
+                      <div className='space-y-2'>
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-4 w-48" />
+                      </div>
+                  </div>
+                  <Skeleton className="h-24 w-full" />
+              </div>
+            </div>
+            <aside className="lg:col-span-1">
+              <SuggestedVideos currentVideoId={id} />
+            </aside>
           </div>
-        )}
-        <div className="mt-4 space-y-4">
-            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>
-            <div className="flex items-center gap-4">
-                <Avatar>
-                    <AvatarImage src={video.channelAvatarUrl} alt={video.channel} />
-                    <AvatarFallback>{video.channel.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="font-semibold">{video.channel}</p>
-                    <div className="text-sm text-muted-foreground">
-                        <span>{video.views} views</span>
-                        <span className="mx-1">&bull;</span>
-                        <span>{video.uploadedAt}</span>
+        );
+    }
+    
+    if (!video) {
+        notFound();
+    }
+    
+    const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
+
+
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          <div className="lg:col-span-2">
+            {video.youtubeId ? (
+              <YouTubePlayer videoId={video.youtubeId} title={video.title} />
+            ) : video.videoUrl ? (
+              <MP4Player videoUrl={video.videoUrl} />
+            ) : (
+              <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
+                <p>Video source not available.</p>
+              </div>
+            )}
+            <div className="mt-4 space-y-4">
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>
+                <div className="flex items-center gap-4">
+                    <Avatar>
+                        <AvatarImage src={video.channelAvatarUrl} alt={video.channel} />
+                        <AvatarFallback>{video.channel.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                        <p className="font-semibold">{video.channel}</p>
+                        <div className="text-sm text-muted-foreground">
+                            <span>{uploadedAt}</span>
+                        </div>
                     </div>
                 </div>
+                 <div className="bg-card p-4 rounded-lg border">
+                    <h3 className="font-semibold mb-2">Description</h3>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
+                </div>
             </div>
-             <div className="bg-card p-4 rounded-lg border">
-                <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
-            </div>
+          </div>
+          <aside className="lg:col-span-1">
+            <SuggestedVideos currentVideoId={video.id} />
+          </aside>
         </div>
-      </div>
-      <aside className="lg:col-span-1">
-        <SuggestedVideos currentVideoId={video.id} />
-      </aside>
-    </div>
-  );
+    );
+}
+
+export default function WatchPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+  return <WatchPageContent id={id} />;
 }

@@ -1,22 +1,36 @@
+'use client';
 import { Suspense } from 'react';
 import { VideoCard } from "@/components/video-card";
-import { videos } from "@/lib/data";
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
+import type { Video } from '@/lib/types';
 
 function VideoGrid({ searchQuery }: { searchQuery?: string }) {
-  const filteredVideos = videos.filter((video) =>
+  const firestore = useFirestore();
+  const videosCollection = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'videos'), orderBy('uploadDate', 'desc'));
+  }, [firestore]);
+
+  const { data: videos, isLoading } = useCollection<Video>(videosCollection);
+
+  if (isLoading) {
+    return <VideoGridSkeleton />;
+  }
+
+  const filteredVideos = videos?.filter((video) =>
     video.title.toLowerCase().includes(searchQuery?.toLowerCase() ?? "") ||
-    video.description.toLowerCase().includes(searchQuery?.toLowerCase() ?? "") ||
-    video.channel.toLowerCase().includes(searchQuery?.toLowerCase() ?? "")
+    video.description.toLowerCase().includes(searchQuery?.toLowerCase() ?? "")
   );
 
-  if (filteredVideos.length === 0) {
+  if (filteredVideos?.length === 0) {
     return <p className="text-center text-muted-foreground col-span-full">No videos found matching your search.</p>;
   }
 
   return (
     <>
-      {filteredVideos.map((video) => (
+      {filteredVideos?.map((video) => (
         <VideoCard key={video.id} video={video} />
       ))}
     </>

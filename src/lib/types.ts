@@ -1,3 +1,5 @@
+import { FieldValue } from "firebase/firestore";
+
 export type Video = {
   id: string;
   title: string;
@@ -7,8 +9,8 @@ export type Video = {
   youtubeId?: string; // For YouTube embeds
   channel: string;
   channelAvatarUrl: string;
-  views: string;
-  uploadedAt: string;
+  uploadDate: FieldValue;
+  duration: number;
 };
 
 export type Playlist = {
@@ -17,4 +19,11 @@ export type Playlist = {
   description: string;
   thumbnailUrl: string;
   videoIds: string[];
+};
+
+export type UserProfile = {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
 };

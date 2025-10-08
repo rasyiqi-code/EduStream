@@ -40,8 +40,8 @@ function MP4Player({ videoUrl }: { videoUrl: string }) {
 }
 
 
-export default function PlaylistPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = React.use(params);
+export default function PlaylistPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const searchParams = useSearchParams();
     const playlist = playlists.find((p) => p.id === id);
 

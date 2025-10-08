@@ -3,12 +3,46 @@ import Link from "next/link";
 import type { Video } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
+import { Timestamp } from "firebase/firestore";
 
 interface VideoCardProps {
   video: Video;
 }
 
+function formatTimeAgo(timestamp: any): string {
+  if (!timestamp || !timestamp.seconds) {
+    return 'just now';
+  }
+  const date = new Timestamp(timestamp.seconds, timestamp.nanoseconds).toDate();
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  let interval = seconds / 31536000;
+  if (interval > 1) {
+    return Math.floor(interval) + " years ago";
+  }
+  interval = seconds / 2592000;
+  if (interval > 1) {
+    return Math.floor(interval) + " months ago";
+  }
+  interval = seconds / 86400;
+  if (interval > 1) {
+    return Math.floor(interval) + " days ago";
+  }
+  interval = seconds / 3600;
+  if (interval > 1) {
+    return Math.floor(interval) + " hours ago";
+  }
+  interval = seconds / 60;
+  if (interval > 1) {
+    return Math.floor(interval) + " minutes ago";
+  }
+  return "just now";
+}
+
 export function VideoCard({ video }: VideoCardProps) {
+  const timeAgo = formatTimeAgo(video.uploadDate);
+
   return (
     <Card className="overflow-hidden border-0 shadow-none rounded-lg bg-transparent">
       <CardContent className="p-0">
@@ -41,9 +75,7 @@ export function VideoCard({ video }: VideoCardProps) {
             </Link>
             <p className="text-sm text-muted-foreground mt-1">{video.channel}</p>
             <div className="text-sm text-muted-foreground">
-              <span>{video.views} views</span>
-              <span className="mx-1">&bull;</span>
-              <span>{video.uploadedAt}</span>
+              <span>{timeAgo}</span>
             </div>
           </div>
         </div>

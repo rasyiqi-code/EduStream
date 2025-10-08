@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
 import Link from "next/link";
-import { Film, Menu, Search } from "lucide-react";
+import { Film, Menu, Search, LogOut } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense } from 'react';
@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/input";
 import { AddVideoDialog } from "@/components/add-video-dialog";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "./ui/skeleton";
+import { useAuth, useUser } from "@/firebase";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { signOut } from "firebase/auth";
 
 function SearchBar() {
   const router = useRouter();
@@ -43,6 +47,58 @@ function SearchBar() {
   )
 }
 
+function UserNav() {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  const handleSignOut = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
+  };
+
+  if (isUserLoading) {
+    return <Skeleton className="h-10 w-10 rounded-full" />;
+  }
+
+  if (user) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-full">
+            <Avatar>
+              <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+              <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium leading-none">{user.displayName}</p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Sign Out</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  return (
+    <Button asChild>
+      <Link href="/login">Sign In</Link>
+    </Button>
+  )
+}
+
+
 function SearchBarSkeleton() {
   return <Skeleton className="h-10 w-[300px] sm:w-[300px] md:w-[200px] lg:w-[300px] ml-auto" />
 }
@@ -50,6 +106,7 @@ function SearchBarSkeleton() {
 
 export function AppHeader() {
   const { toggleSidebar, isMobile } = useSidebar();
+  const { user } = useUser();
   
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
@@ -74,7 +131,8 @@ export function AppHeader() {
         <Suspense fallback={<SearchBarSkeleton />}>
           <SearchBar />
         </Suspense>
-        <AddVideoDialog />
+        {user && <AddVideoDialog />}
+        <UserNav />
       </div>
     </header>
   );

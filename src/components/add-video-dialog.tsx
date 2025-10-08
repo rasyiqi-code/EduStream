@@ -29,6 +29,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
+import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase";
+import { collection, serverTimestamp } from "firebase/firestore";
+import type { Video } from "@/lib/types";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -44,6 +47,8 @@ const formSchema = z.object({
 export function AddVideoDialog() {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,8 +60,45 @@ export function AddVideoDialog() {
     },
   });
 
+  function getYouTubeVideoId(url: string) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+    if (!firestore || !user) return;
+
+    let videoData: Omit<Video, 'id'> = {
+      title: values.title,
+      description: values.description || "",
+      thumbnailUrl: 'https://picsum.photos/seed/6/640/360', // Default thumbnail
+      uploadDate: serverTimestamp(),
+      duration: 0, // Default duration
+      channel: user.displayName || "Anonymous",
+      channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
+    };
+
+    if (values.videoType === 'youtube') {
+      const youtubeId = getYouTubeVideoId(values.url);
+      if (youtubeId) {
+        videoData.youtubeId = youtubeId;
+        videoData.thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/0.jpg`;
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Invalid YouTube URL",
+          description: "Please enter a valid YouTube video URL.",
+        });
+        return;
+      }
+    } else {
+      videoData.videoUrl = values.url;
+    }
+
+    const videosCollection = collection(firestore, 'videos');
+    addDocumentNonBlocking(videosCollection, videoData);
+    
     toast({
       title: "Video Added!",
       description: `${values.title} has been successfully added to the library.`,
