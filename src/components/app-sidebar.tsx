@@ -15,13 +15,15 @@ import {
   SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
+      <SidebarRail />
       <SidebarHeader className="flex md:hidden">
         <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
           <Film className="h-6 w-6 text-primary" />

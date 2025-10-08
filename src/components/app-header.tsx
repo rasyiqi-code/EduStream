@@ -9,7 +9,7 @@ import { Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddVideoDialog } from "@/components/add-video-dialog";
-import { useSidebar } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "./ui/skeleton";
 
 function SearchBar() {
@@ -49,19 +49,23 @@ function SearchBarSkeleton() {
 
 
 export function AppHeader() {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, isMobile } = useSidebar();
   
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:hidden"
-        onClick={toggleSidebar}
-      >
-        <Menu className="h-6 w-6" />
-        <span className="sr-only">Toggle Sidebar</span>
-      </Button>
+      {isMobile ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={toggleSidebar}
+        >
+          <Menu className="h-6 w-6" />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      ) : (
+        <SidebarTrigger />
+      )}
       <Link href="/" className="hidden items-center gap-2 font-semibold md:flex">
         <Film className="h-6 w-6 text-primary" />
         <span className="text-lg">EduStream</span>
