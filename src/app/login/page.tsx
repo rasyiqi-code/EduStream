@@ -41,7 +41,6 @@ export default function LoginPage() {
             title: "Sign-in Failed",
             description: "Could not sign in with Google. Please try again.",
           });
-          console.error("Google Sign-In Error:", error);
       }
     }
   };
