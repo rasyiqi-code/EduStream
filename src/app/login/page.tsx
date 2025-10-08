@@ -35,25 +35,23 @@ export default function LoginPage() {
     if (!auth || !firestore) return;
 
     const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+    
+    // signInWithPopup can still throw errors for non-permission issues (e.g., popup closed).
+    // We let these bubble up for now or handle them separately if needed.
+    // The permission error on setDoc will be caught by the non-blocking handler.
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
 
-      const userProfile: UserProfile = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-      };
-      
-      const userDocRef = doc(firestore, 'users', user.uid);
-      setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
-
-    } catch (error) {
-      // General sign-in errors (e.g., popup closed) can be logged here if needed,
-      // but permission errors will be handled by the non-blocking function.
-      console.error("Authentication process error:", error);
-    }
+    const userProfile: UserProfile = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+      photoURL: user.photoURL,
+    };
+    
+    const userDocRef = doc(firestore, 'users', user.uid);
+    // The FirestorePermissionError will be emitted by this non-blocking function.
+    setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
   };
 
   if (isUserLoading || user) {
