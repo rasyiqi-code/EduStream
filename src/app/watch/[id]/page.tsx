@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { videos } from "@/lib/data";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound } from 'next/navigation';
+import React from 'react';
 
 function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
     return (
@@ -62,7 +63,8 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
-export default function WatchPage({ params: { id } }: { params: { id: string } }) {
+export default function WatchPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const video = videos.find((v) => v.id === id);
 
   if (!video) {

@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlayCircle } from 'lucide-react';
+import React from 'react';
 
 function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
     return (
@@ -39,7 +40,8 @@ function MP4Player({ videoUrl }: { videoUrl: string }) {
 }
 
 
-export default function PlaylistPage({ params: { id } }: { params: { id: string } }) {
+export default function PlaylistPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = React.use(params);
     const searchParams = useSearchParams();
     const playlist = playlists.find((p) => p.id === id);
 
