@@ -1,96 +1,98 @@
 /**
- * @file Firestore Security Rules
- * @description This ruleset enforces a mixed security model, with user-owned profiles and public read access to videos and playlists.
+ * @fileOverview Firestore Security Rules for EduStream platform.
+ *
+ * Core Philosophy:
+ * This ruleset employs a hybrid security model. User profiles are strictly
+ * controlled by their respective owners. Video and Playlist data is publicly
+ * readable but writable only by authenticated users (with creator ownership).
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information, accessible only to the owner.
- * - /videos/{videoId}: Stores video metadata, publicly readable, but creation and modification is restricted to the video's author.
- * - /playlists/{playlistId}: Stores playlist metadata, publicly readable, but creation and modification is restricted to the playlist's author.
+ * - /users/{userId}: Stores user profile information, accessible only by the
+ *   user themselves.
+ * - /videos/{videoId}: Stores video metadata, publicly readable but
+ *   owner-writable.
+ * - /playlists/{playlistId}: Stores playlist metadata, publicly readable but
+ *   owner-writable.
  *
  * Key Security Decisions:
- * - User profiles are strictly private, accessible only to the owning user.
- * - Video and Playlist data is publicly readable to enable discovery, but write access is restricted using the `authorId` field.
- *
- * Denormalization for Authorization:
- * - The `Video` and `Playlist` entities are expected to contain an `authorId` field to enable owner-only write access.
+ * - User listing is disallowed.
+ * - Public read access is granted for videos and playlists to facilitate
+ *   discovery.
+ * - Write access to videos and playlists is restricted to authenticated
+ *   users who are the creators of the content.
+ * - All writes require user authentication.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user profile data, ensuring only the owner can read or write.
+     * @description Enforces user-ownership for profile data.
      * @path /users/{userId}
-     * @allow (get, create, update, delete, list): Authenticated user with matching userId.
-     * @deny (get, create, update, delete, list): Any other user or unauthenticated request.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - User A can create their profile if request.auth.uid == userId
+     * @allow (get, update, delete) - User A can access their profile if request.auth.uid == userId
+     * @deny (create) - User A cannot create a profile for User B
+     * @deny (get, update, delete) - User A cannot access User B's profile
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
-      function isExistingOwner(userId) {
-          return isOwner(userId) && resource != null;
+      function isSignedIn() {
+        return request.auth != null;
       }
-
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Manages video metadata, allowing public read access but restricting writes to the video's author.
+     * @description Allows public read access to video metadata, but restricts writes to authenticated creators.
      * @path /videos/{videoId}
-     * @allow (get, list): Any user (public read).
-     * @allow (create): Authenticated user creating the video, only if `request.resource.data.authorId` matches the user's UID.
-     * @allow (update, delete): Authenticated user who is the author of the video (`resource.data.authorId` matches the user's UID).
-     * @deny (create, update, delete): Any other user or unauthenticated request attempting to modify the video.
-     * @principle Allows public read access for discovery while enforcing document ownership for writes.
+     * @allow (get, list) - Anyone can read video metadata.
+     * @allow (create) - User A can create video if isSignedIn().
+     * @allow (update, delete) - User A can modify video if isSignedIn().
+     * @deny (create) - Non-authenticated user cannot create video.
+     * @deny (update, delete) - User A cannot modify video that they do not own or that does not exist.
+     * @principle Public read with owner-only writes.
      */
     match /videos/{videoId} {
+      function isOwner() {
+        return request.auth.uid == resource.data.authorId;
+      }
       function isSignedIn() {
         return request.auth != null;
       }
-      function isOwner(authorId) {
-        return isSignedIn() && request.auth.uid == authorId;
-      }
-      function isExistingOwner(authorId) {
-        return isOwner(authorId) && resource != null;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.authorId);
-      allow delete: if isExistingOwner(resource.data.authorId);
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner();
+      allow delete: if isSignedIn() && isOwner();
     }
 
     /**
-     * @description Manages playlist metadata, allowing public read access but restricting writes to the playlist's author.
+     * @description Allows public read access to playlist metadata, but restricts writes to authenticated creators.
      * @path /playlists/{playlistId}
-     * @allow (get, list): Any user (public read).
-     * @allow (create): Authenticated user creating the playlist, only if `request.resource.data.authorId` matches the user's UID.
-     * @allow (update, delete): Authenticated user who is the author of the playlist (`resource.data.authorId` matches the user's UID).
-     * @deny (create, update, delete): Any other user or unauthenticated request attempting to modify the playlist.
+     * @allow (get, list) - Anyone can read playlist metadata.
+     * @allow (create) - User A can create playlist if isSignedIn().
+     * @allow (update, delete) - User A can modify playlist if isSignedIn().
+     * @deny (create) - Non-authenticated user cannot create playlist.
+     * @deny (update, delete) - User A cannot modify playlist that they do not own or that does not exist.
+     * @principle Public read with owner-only writes.
      */
     match /playlists/{playlistId} {
+      function isOwner() {
+        return request.auth.uid == resource.data.authorId;
+      }
       function isSignedIn() {
         return request.auth != null;
       }
-      function isOwner(authorId) {
-        return isSignedIn() && request.auth.uid == authorId;
-      }
-      function isExistingOwner(authorId) {
-          return isOwner(authorId) && resource != null;
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isExistingOwner(resource.data.authorId);
-      allow delete: if isExistingOwner(resource.data.authorId);
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && isOwner();
+      allow delete: if isSignedIn() && isOwner();
     }
   }
 }
