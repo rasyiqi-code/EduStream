@@ -1,0 +1,59 @@
+/**
+ * @file Firestore Security Rules for EduStream platform.
+ *
+ * @core_philosophy This ruleset allows any authenticated user to read all videos and playlists.
+ *   Write access (create, update, delete) is disallowed for all users.
+ *
+ * @data_structure The database consists of two top-level collections: `/videos/{videoId}` and `/playlists/{playlistId}`.
+ *   Videos and playlists have a many-to-many relationship managed through `playlistIds` and `videoIds` arrays within the documents.
+ *
+ * @key_security_decisions
+ *   - No user-specific data is stored, so ownership is not a concern in the current ruleset.
+ *   - Listing of videos and playlists is public for all authenticated users.
+ *   - Write access is explicitly denied for non-admin users.
+ *
+ * @denormalization_for_authorization The `playlistIds` and `videoIds` are denormalized arrays.
+ *
+ * @structural_segregation  The Firestore structure is designed to avoid the need for structural segregation.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows any authenticated user to read videos, but denies create, update, and delete operations.
+     * @path /videos/{videoId}
+     * @allow (get, list) Any authenticated user can read video data.
+     * @deny (create, update, delete) No user can create, update, or delete videos.
+     * @principle Allows public read access for authenticated users and restricts write access for non-admin users.
+     */
+    match /videos/{videoId} {
+      allow get, list: if isSignedIn();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Allows any authenticated user to read playlists, but denies create, update, and delete operations.
+     * @path /playlists/{playlistId}
+     * @allow (get, list) Any authenticated user can read playlist data.
+     * @deny (create, update, delete) No user can create, update, or delete playlists.
+     * @principle Allows public read access for authenticated users and restricts write access for non-admin users.
+     */
+    match /playlists/{playlistId} {
+      allow get, list: if isSignedIn();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+  }
+}

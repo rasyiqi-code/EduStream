@@ -1,0 +1,133 @@
+{
+  "entities": {
+    "Video": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Video",
+      "type": "object",
+      "description": "Represents a video in the EduStream platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Video entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the video."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the video content."
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the video (direct MP4 URL or YouTube embed code)."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "Date and time when the video was uploaded.",
+          "format": "date-time"
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration of the video in seconds."
+        },
+        "playlistIds": {
+          "type": "array",
+          "description": "References to Playlists. (Relationship: Playlist N:N Video)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "url",
+        "uploadDate",
+        "duration"
+      ]
+    },
+    "Playlist": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Playlist",
+      "type": "object",
+      "description": "Represents a playlist of videos organized by course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Playlist entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the playlist (e.g., 'Algebra I')."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the playlist."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "Date and time when the playlist was created.",
+          "format": "date-time"
+        },
+        "videoIds": {
+          "type": "array",
+          "description": "References to Videos. (Relationship: Video N:N Playlist)",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "creationDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/videos/{videoId}",
+        "definition": {
+          "entityName": "Video",
+          "schema": {
+            "$ref": "#/backend/entities/Video"
+          },
+          "description": "Stores video content metadata. Includes 'playlistIds' array for N:N relationship with Playlists.",
+          "params": [
+            {
+              "name": "videoId",
+              "description": "Unique identifier for the video document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/playlists/{playlistId}",
+        "definition": {
+          "entityName": "Playlist",
+          "schema": {
+            "$ref": "#/backend/entities/Playlist"
+          },
+          "description": "Stores playlist metadata. Includes 'videoIds' array for N:N relationship with Videos.",
+          "params": [
+            {
+              "name": "playlistId",
+              "description": "Unique identifier for the playlist document."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be simple and scalable. It is built around two core entities: `Videos` and `Playlists`.  A top-level collection is created for each, enabling easy querying and management.  The N:N relationship between Videos and Playlists are managed via the denormalized `playlistIds` and `videoIds` array fields within the Video and Playlist documents, respectively.  This is acceptable because authorization is simple: any authenticated user can `list` videos, but only an admin could `create`, `update`, and `delete` videos. \n\n**Authorization Independence (CRITICAL):** The denormalized arrays are the key to achieving Authorization Independence. There is no need to `get()` any parent document to validate access. All authorization checks are based on the properties of the document itself.\n\n**QAPs (Rules are not Filters):**  The chosen structure supports efficient `list` operations. Since all videos are stored in a single collection, querying for all videos is straightforward.  Access to videos could be controlled via a separate admin role collection or a boolean within the video itself, but this is outside of the scope of the prompt.\n\n**Future Considerations:** For more complex role-based access control scenarios (e.g., different user roles having different access levels to playlists), consider introducing a dedicated `members` map on the Playlist documents, which could then be further expanded to include group-based access control if the application evolves."
+  }
+}
