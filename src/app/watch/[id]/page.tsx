@@ -1,10 +1,9 @@
-'use client';
+"use client";
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound } from 'next/navigation';
-import React, { Suspense } from 'react';
 import { doc, collection, query, where, limit } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +13,7 @@ function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
         <div className="aspect-video w-full">
             <iframe
                 className="w-full h-full rounded-xl"
-                src={`https://www.youtube.com/embed/${videoId}`}
+                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
                 title={title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -131,9 +130,10 @@ function WatchPageSkeleton() {
     );
 }
 
-
-function WatchPageContent({ id }: { id: string }) {
+export default function WatchPage({ params }: { params: { id: string } }) {
     const firestore = useFirestore();
+    const { id } = params;
+
     const videoRef = useMemoFirebase(() => {
         if (!firestore) return null;
         return doc(firestore, 'videos', id);
@@ -145,12 +145,17 @@ function WatchPageContent({ id }: { id: string }) {
         return <WatchPageSkeleton />;
     }
     
-    if (!video) {
+    if (!isLoading && !video) {
         notFound();
     }
 
-    const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
+    if (!video) {
+        // This case should be covered by the one above, but as a fallback,
+        // we can show the skeleton or a message.
+        return <WatchPageSkeleton />;
+    }
 
+    const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -189,13 +194,4 @@ function WatchPageContent({ id }: { id: string }) {
           </aside>
         </div>
     );
-}
-
-export default function WatchPage({ params }: { params: { id: string } }) {
-  const id = React.use(params).id;
-  return (
-    <Suspense fallback={<WatchPageSkeleton/>}>
-      <WatchPageContent id={id} />
-    </Suspense>
-  );
 }
