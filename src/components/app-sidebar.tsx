@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ListVideo, Film } from "lucide-react";
+import { ListVideo, Film } from "lucide-react";
 
 import { playlists } from "@/lib/data";
 import {
@@ -12,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarSeparator,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarRail,

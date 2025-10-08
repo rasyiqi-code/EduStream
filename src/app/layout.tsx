@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppHeader } from "@/components/app-header";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Toaster } from "@/components/ui/toaster";
+import { LayoutProvider } from '@/components/layout-provider';
 
 export const metadata: Metadata = {
   title: 'EduStream',
@@ -23,16 +20,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <SidebarProvider defaultOpen={false}>
-          <AppSidebar />
-          <SidebarInset>
-            <AppHeader />
-            <div className="p-4 sm:p-6">
-              {children}
-            </div>
-          </SidebarInset>
-          <Toaster />
-        </SidebarProvider>
+        <LayoutProvider>{children}</LayoutProvider>
       </body>
     </html>
   );
