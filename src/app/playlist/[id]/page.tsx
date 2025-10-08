@@ -7,7 +7,7 @@ import { notFound } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlayCircle } from 'lucide-react';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
 import type { Playlist, Video } from '@/lib/types';
@@ -65,43 +65,8 @@ function PlaylistPageContent({ id }: { id: string }) {
 
     const currentVideo = videos?.find(v => v.id === currentVideoId);
 
-    if (isPlaylistLoading || areVideosLoading) {
-        return (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                    <Skeleton className="w-full aspect-video rounded-xl" />
-                    <div className="mt-4">
-                        <Skeleton className="h-8 w-3/4" />
-                        <Skeleton className="h-20 w-full mt-2" />
-                    </div>
-                </div>
-                <aside>
-                    <Card>
-                        <CardContent className="p-4 space-y-4">
-                            <div className="flex items-start gap-4">
-                                <Skeleton className="w-[100px] h-[56px] rounded-md" />
-                                <div className="flex-1 space-y-2">
-                                    <Skeleton className="h-6 w-3/4" />
-                                    <Skeleton className="h-4 w-1/4" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                     <div key={i} className="flex items-center gap-3 p-2">
-                                        <Skeleton className="w-5 h-5"/>
-                                        <Skeleton className="w-[120px] h-[68px] rounded-md"/>
-                                        <div className="flex-1 space-y-2">
-                                            <Skeleton className="h-4 w-full" />
-                                            <Skeleton className="h-4 w-1/2" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </aside>
-            </div>
-        )
+    if (isPlaylistLoading || (videosQuery && areVideosLoading)) {
+        return <PlaylistPageSkeleton />;
     }
 
     if (!isPlaylistLoading && !playlist) {
@@ -109,7 +74,7 @@ function PlaylistPageContent({ id }: { id: string }) {
     }
     
     if (!playlist) {
-        return null;
+        return <PlaylistPageSkeleton />;
     }
     
     const orderedVideos = playlist.videoIds.map(id => videos?.find(v => v.id === id)).filter((v): v is Video => !!v);
@@ -181,7 +146,51 @@ function PlaylistPageContent({ id }: { id: string }) {
     )
 }
 
+function PlaylistPageSkeleton() {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+                <Skeleton className="w-full aspect-video rounded-xl" />
+                <div className="mt-4">
+                    <Skeleton className="h-8 w-3/4" />
+                    <Skeleton className="h-20 w-full mt-2" />
+                </div>
+            </div>
+            <aside>
+                <Card>
+                    <CardContent className="p-4 space-y-4">
+                        <div className="flex items-start gap-4">
+                            <Skeleton className="w-[100px] h-[56px] rounded-md" />
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-6 w-3/4" />
+                                <Skeleton className="h-4 w-1/4" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                 <div key={i} className="flex items-center gap-3 p-2">
+                                    <Skeleton className="w-5 h-5"/>
+                                    <Skeleton className="w-[120px] h-[68px] rounded-md"/>
+                                    <div className="flex-1 space-y-2">
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-1/2" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            </aside>
+        </div>
+    )
+}
+
 
 export default function PlaylistPage({ params }: { params: { id: string } }) {
-    return <PlaylistPageContent id={params.id} />;
+    const id = React.use(params).id;
+    return (
+        <Suspense fallback={<PlaylistPageSkeleton />}>
+            <PlaylistPageContent id={id} />
+        </Suspense>
+    );
 }

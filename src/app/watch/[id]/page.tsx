@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound } from 'next/navigation';
-import React from 'react';
+import React, { Suspense } from 'react';
 import { doc, collection, query, where, limit } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -95,6 +95,43 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
+function WatchPageSkeleton() {
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+            <div className="lg:col-span-2">
+                <Skeleton className="w-full aspect-video rounded-xl" />
+                <div className="mt-4 space-y-4">
+                    <Skeleton className="h-8 w-3/4" />
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className='space-y-2'>
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-48" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-24 w-full" />
+                </div>
+            </div>
+            <aside className="lg:col-span-1">
+                <div className="space-y-4">
+                    <h2 className="text-xl font-semibold">Up Next</h2>
+                    {Array.from({length: 5}).map((_, i) => (
+                        <div key={i} className="flex items-start gap-4">
+                            <Skeleton className="w-40 h-[90px] rounded-lg" />
+                            <div className='flex-1 space-y-2'>
+                                <Skeleton className="h-4 w-4/5" />
+                                <Skeleton className="h-4 w-2/5" />
+                                <Skeleton className="h-4 w-3/5" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </aside>
+        </div>
+    );
+}
+
+
 function WatchPageContent({ id }: { id: string }) {
     const firestore = useFirestore();
     const videoRef = useMemoFirebase(() => {
@@ -105,38 +142,11 @@ function WatchPageContent({ id }: { id: string }) {
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
     if (isLoading) {
-        return (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-            <div className="lg:col-span-2">
-              <Skeleton className="w-full aspect-video rounded-xl" />
-              <div className="mt-4 space-y-4">
-                  <Skeleton className="h-8 w-3/4" />
-                  <div className="flex items-center gap-4">
-                      <Skeleton className="h-12 w-12 rounded-full" />
-                      <div className='space-y-2'>
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-4 w-48" />
-                      </div>
-                  </div>
-                  <Skeleton className="h-24 w-full" />
-              </div>
-            </div>
-            <aside className="lg:col-span-1">
-              <SuggestedVideos currentVideoId={id} />
-            </aside>
-          </div>
-        );
+        return <WatchPageSkeleton />;
     }
     
-    // Only call notFound if loading is complete and the video still doesn't exist.
-    if (!isLoading && !video) {
-        notFound();
-    }
-    
-    // If video is null at this point, it's a temporary state before notFound() is called.
-    // Return null or a minimal loader to prevent rendering errors.
     if (!video) {
-        return null;
+        notFound();
     }
 
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
@@ -182,5 +192,10 @@ function WatchPageContent({ id }: { id: string }) {
 }
 
 export default function WatchPage({ params }: { params: { id: string } }) {
-  return <WatchPageContent id={params.id} />;
+  const id = React.use(params).id;
+  return (
+    <Suspense fallback={<WatchPageSkeleton/>}>
+      <WatchPageContent id={id} />
+    </Suspense>
+  );
 }

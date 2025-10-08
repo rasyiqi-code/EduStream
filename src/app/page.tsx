@@ -6,6 +6,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import React from 'react';
+import { useSearchParams } from 'next/navigation';
 
 function VideoGrid({ searchQuery }: { searchQuery?: string }) {
   const firestore = useFirestore();
@@ -58,16 +59,22 @@ function VideoGridSkeleton() {
   );
 }
 
-
-export default function Home({ searchParams }: { searchParams?: { search?: string } }) {
-  const sp = searchParams ? React.use(searchParams) : undefined;
-  const searchQuery = sp?.search;
+function HomePageContent() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('search');
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-      <Suspense fallback={<VideoGridSkeleton />}>
-        <VideoGrid searchQuery={searchQuery} />
-      </Suspense>
-    </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+        <VideoGrid searchQuery={searchQuery || undefined} />
+      </div>
+  )
+}
+
+
+export default function Home() {
+  return (
+    <Suspense fallback={<VideoGridSkeleton />}>
+      <HomePageContent />
+    </Suspense>
   );
 }
