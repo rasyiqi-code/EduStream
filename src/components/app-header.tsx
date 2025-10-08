@@ -4,14 +4,15 @@ import Link from "next/link";
 import { Film, Menu, Search } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
+import { Suspense } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddVideoDialog } from "@/components/add-video-dialog";
 import { useSidebar } from "@/components/ui/sidebar";
+import { Skeleton } from "./ui/skeleton";
 
-export function AppHeader() {
-  const { toggleSidebar } = useSidebar();
+function SearchBar() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultSearch = searchParams.get("search") ?? "";
@@ -23,6 +24,33 @@ export function AppHeader() {
     router.push(`/?search=${searchQuery}`);
   };
 
+  return (
+    <form
+      onSubmit={onSearch}
+      className="ml-auto flex-1 sm:flex-initial"
+    >
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          name="search"
+          placeholder="Search videos..."
+          defaultValue={defaultSearch}
+          className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+        />
+      </div>
+    </form>
+  )
+}
+
+function SearchBarSkeleton() {
+  return <Skeleton className="h-10 w-[300px] sm:w-[300px] md:w-[200px] lg:w-[300px] ml-auto" />
+}
+
+
+export function AppHeader() {
+  const { toggleSidebar } = useSidebar();
+  
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
       <Button
@@ -39,21 +67,9 @@ export function AppHeader() {
         <span className="text-lg">EduStream</span>
       </Link>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form
-          onSubmit={onSearch}
-          className="ml-auto flex-1 sm:flex-initial"
-        >
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              name="search"
-              placeholder="Search videos..."
-              defaultValue={defaultSearch}
-              className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-            />
-          </div>
-        </form>
+        <Suspense fallback={<SearchBarSkeleton />}>
+          <SearchBar />
+        </Suspense>
         <AddVideoDialog />
       </div>
     </header>
