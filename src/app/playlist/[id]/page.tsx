@@ -104,8 +104,12 @@ function PlaylistPageContent({ id }: { id: string }) {
         )
     }
 
-    if (!playlist) {
+    if (!isPlaylistLoading && !playlist) {
         notFound();
+    }
+    
+    if (!playlist) {
+        return null;
     }
     
     const orderedVideos = playlist.videoIds.map(id => videos?.find(v => v.id === id)).filter((v): v is Video => !!v);
@@ -179,6 +183,5 @@ function PlaylistPageContent({ id }: { id: string }) {
 
 
 export default function PlaylistPage({ params }: { params: { id: string } }) {
-    const id = React.use(params);
-    return <PlaylistPageContent id={id} />;
+    return <PlaylistPageContent id={params.id} />;
 }

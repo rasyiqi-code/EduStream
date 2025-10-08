@@ -182,6 +182,5 @@ function WatchPageContent({ id }: { id: string }) {
 }
 
 export default function WatchPage({ params }: { params: { id: string } }) {
-  const { id } = React.use(params);
-  return <WatchPageContent id={id} />;
+  return <WatchPageContent id={params.id} />;
 }
