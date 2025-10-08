@@ -67,16 +67,25 @@ export function AddVideoDialog() {
   }
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore || !user) return;
+    if (!firestore || !user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to add a video.",
+        });
+        return;
+    }
 
     let videoData: Omit<Video, 'id'> = {
       title: values.title,
       description: values.description || "",
-      thumbnailUrl: 'https://picsum.photos/seed/6/640/360', // Default thumbnail
+      thumbnailUrl: 'https://picsum.photos/seed/6/640/360',
       uploadDate: serverTimestamp(),
-      duration: 0, // Default duration
+      duration: 0, 
       channel: user.displayName || "Anonymous",
       channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
+      // Add authorId to link video to the user
+      authorId: user.uid,
     };
 
     if (values.videoType === 'youtube') {

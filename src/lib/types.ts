@@ -11,6 +11,7 @@ export type Video = {
   channelAvatarUrl: string;
   uploadDate: FieldValue;
   duration: number;
+  authorId?: string; // Added to link video to user
 };
 
 export type Playlist = {

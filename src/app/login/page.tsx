@@ -3,13 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
-import { setDocumentNonBlocking } from '@/firebase';
 
 function GoogleIcon() {
   return (
@@ -51,7 +50,9 @@ export default function LoginPage() {
       setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
     } catch (error) {
-      console.error("Authentication failed:", error);
+      // General sign-in errors (e.g., popup closed) can be logged here if needed,
+      // but permission errors will be handled by the non-blocking function.
+      console.error("Authentication process error:", error);
     }
   };
 
