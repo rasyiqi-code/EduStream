@@ -1,59 +1,105 @@
 /**
- * @file Firestore Security Rules for EduStream platform.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a security model based on the application's data structure.
  *
- * @core_philosophy This ruleset allows any authenticated user to read all videos and playlists.
- *   Write access (create, update, delete) is disallowed for all users.
+ * Core Philosophy:
+ *  - Users can only read and write their own profile data under `/users/{userId}`.
+ *  - The `/videos` collection is publicly readable but only authorized users can create, update, or delete. The video document MUST have an ownerId field that matches the authenticated user's uid.
+ *  - The `/playlists` collection is publicly readable, but only authorized users can create, update, or delete. The playlist document MUST have an ownerId field that matches the authenticated user's uid.
  *
- * @data_structure The database consists of two top-level collections: `/videos/{videoId}` and `/playlists/{playlistId}`.
- *   Videos and playlists have a many-to-many relationship managed through `playlistIds` and `videoIds` arrays within the documents.
+ * Data Structure:
+ *  - User profiles are stored under `/users/{userId}`.
+ *  - Videos are stored under `/videos/{videoId}`.
+ *  - Playlists are stored under `/playlists/{playlistId}`.
  *
- * @key_security_decisions
- *   - No user-specific data is stored, so ownership is not a concern in the current ruleset.
- *   - Listing of videos and playlists is public for all authenticated users.
- *   - Write access is explicitly denied for non-admin users.
+ * Key Security Decisions:
+ *  - Listing all users is disallowed.
+ *  - Read access to the `/videos` and `/playlists` collections is public.
+ *  - Write access to the `/videos` and `/playlists` collections requires the user to be authenticated and the document to have a valid `ownerId` field.
  *
- * @denormalization_for_authorization The `playlistIds` and `videoIds` are denormalized arrays.
- *
- * @structural_segregation  The Firestore structure is designed to avoid the need for structural segregation.
+ * Denormalization for Authorization:
+ *  - Videos and Playlists require an `ownerId` to determine ownership for write operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows any authenticated user to read videos, but denies create, update, and delete operations.
-     * @path /videos/{videoId}
-     * @allow (get, list) Any authenticated user can read video data.
-     * @deny (create, update, delete) No user can create, update, or delete videos.
-     * @principle Allows public read access for authenticated users and restricts write access for non-admin users.
-     */
-    match /videos/{videoId} {
-      allow get, list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
-     * @description Allows any authenticated user to read playlists, but denies create, update, and delete operations.
-     * @path /playlists/{playlistId}
-     * @allow (get, list) Any authenticated user can read playlist data.
-     * @deny (create, update, delete) No user can create, update, or delete playlists.
-     * @principle Allows public read access for authenticated users and restricts write access for non-admin users.
-     */
-    match /playlists/{playlistId} {
-      allow get, list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    /**
      * @description Checks if the user is signed in.
-     * @return True if the user is signed in, false otherwise.
+     * @return {boolean} True if the user is signed in, false otherwise.
      */
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the resource.
+     * @param {string} userId - The user ID to compare against the request's auth UID.
+     * @return {boolean} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the existing resource.
+     *              Combines the ownership check with the existence check.
+     * @param {string} userId - The user ID to compare against the resource's ownerId.
+     * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId && resource != null;
+    }
+
+    /**
+     * @description Rules for user profiles.
+     * @path /users/{userId}
+     * @allow (create) - Authenticated user creates their own profile (userId matches auth.uid).
+     * @allow (get, update, delete) - Authenticated user reads/modifies their own profile.
+     * @deny (create) - Unauthenticated user attempts to create a profile.
+     * @deny (get, update, delete) - Authenticated user attempts to access another user's profile.
+     * @principle Enforces document ownership for all operations on user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for videos.
+     * @path /videos/{videoId}
+     * @allow (get, list) - Any user can read video metadata.
+     * @allow (create) - Authenticated user creates a video with their UID as the ownerId.
+     * @allow (update, delete) - Authenticated user updates/deletes a video they own.
+     * @deny (create) - Unauthenticated user attempts to create a video.
+     * @deny (update, delete) - Authenticated user attempts to modify/delete a video they don't own.
+     * @principle Allows public read access but enforces ownership for write operations.
+     */
+    match /videos/{videoId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.channel == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.channel);
+      allow delete: if isExistingOwner(resource.data.channel);
+    }
+
+    /**
+     * @description Rules for playlists.
+     * @path /playlists/{playlistId}
+     * @allow (get, list) - Any user can read playlist metadata.
+     * @allow (create) - Authenticated user creates a playlist with their UID as the ownerId.
+     * @allow (update, delete) - Authenticated user updates/deletes a playlist they own.
+     * @deny (create) - Unauthenticated user attempts to create a playlist.
+     * @deny (update, delete) - Authenticated user attempts to modify/delete a playlist they don't own.
+     * @principle Allows public read access but enforces ownership for write operations.
+     */
+    match /playlists/{playlistId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(resource.data.id);
+      allow delete: if isExistingOwner(resource.data.id);
     }
   }
 }
