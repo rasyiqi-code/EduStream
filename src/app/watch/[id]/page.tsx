@@ -128,10 +128,17 @@ function WatchPageContent({ id }: { id: string }) {
         );
     }
     
-    if (!video) {
+    // Only call notFound if loading is complete and the video still doesn't exist.
+    if (!isLoading && !video) {
         notFound();
     }
     
+    // If video is null at this point, it's a temporary state before notFound() is called.
+    // Return null or a minimal loader to prevent rendering errors.
+    if (!video) {
+        return null;
+    }
+
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
 
