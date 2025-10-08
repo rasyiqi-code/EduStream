@@ -30,19 +30,20 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      // The user profile creation will be handled by the useEffect below
-    } catch (error: any) {
-      // Handle non-permission errors from signInWithPopup (e.g., popup closed by user)
-      if (error.code !== 'auth/popup-closed-by-user') {
-          toast({
-            variant: "destructive",
-            title: "Sign-in Failed",
-            description: "Could not sign in with Google. Please try again.",
-          });
-      }
-    }
+    // Do not wrap signInWithPopup in a try/catch.
+    // The onAuthStateChanged listener handles success, and specific errors
+    // like 'popup-closed-by-user' don't need to be toast messages.
+    // Permission errors from Firestore will be caught by the global handler.
+    await signInWithPopup(auth, provider).catch((error) => {
+        // Only show a toast for unexpected errors, not for user-cancelled popups.
+        if (error.code !== 'auth/popup-closed-by-user') {
+            toast({
+                variant: "destructive",
+                title: "Sign-in Failed",
+                description: error.message || "Could not sign in with Google. Please try again.",
+            });
+        }
+    });
   };
 
   const updateUserProfile = useCallback((user: any) => {
