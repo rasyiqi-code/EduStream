@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
+import React from 'react';
 
 function VideoGrid({ searchQuery }: { searchQuery?: string }) {
   const firestore = useFirestore();
@@ -59,7 +60,8 @@ function VideoGridSkeleton() {
 
 
 export default function Home({ searchParams }: { searchParams?: { search?: string } }) {
-  const searchQuery = searchParams?.search;
+  const sp = searchParams ? React.use(searchParams) : undefined;
+  const searchQuery = sp?.search;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
