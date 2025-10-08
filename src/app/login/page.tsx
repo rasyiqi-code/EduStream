@@ -30,20 +30,11 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    // Do not wrap signInWithPopup in a try/catch.
+    // Do not wrap signInWithPopup in a try/catch or chain a .catch().
     // The onAuthStateChanged listener handles success, and specific errors
     // like 'popup-closed-by-user' don't need to be toast messages.
-    // Permission errors from Firestore will be caught by the global handler.
-    await signInWithPopup(auth, provider).catch((error) => {
-        // Only show a toast for unexpected errors, not for user-cancelled popups.
-        if (error.code !== 'auth/popup-closed-by-user') {
-            toast({
-                variant: "destructive",
-                title: "Sign-in Failed",
-                description: error.message || "Could not sign in with Google. Please try again.",
-            });
-        }
-    });
+    // Any subsequent Firestore permission errors will now be caught by the global handler.
+    signInWithPopup(auth, provider);
   };
 
   const updateUserProfile = useCallback((user: any) => {
