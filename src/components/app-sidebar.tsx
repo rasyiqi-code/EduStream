@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ListVideo, Film } from "lucide-react";
-
-import { playlists } from "@/lib/data";
+import { collection } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import type { Playlist } from '@/lib/types';
 import {
   Sidebar,
   SidebarHeader,
@@ -15,10 +16,51 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarRail,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 
+function PlaylistItems() {
+    const pathname = usePathname();
+    const firestore = useFirestore();
+    
+    const playlistsCollection = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return collection(firestore, 'playlists');
+    }, [firestore]);
+
+    const { data: playlists, isLoading } = useCollection<Playlist>(playlistsCollection);
+
+    if (isLoading) {
+        return (
+            <>
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+                <SidebarMenuSkeleton showIcon />
+            </>
+        )
+    }
+
+    return (
+        <>
+            {playlists?.map((playlist) => (
+              <SidebarMenuItem key={playlist.id}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith(`/playlist/${playlist.id}`)}
+                  tooltip={playlist.name}
+                >
+                  <Link href={`/playlist/${playlist.id}`}>
+                    <ListVideo />
+                    <span>{playlist.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+        </>
+    );
+}
+
 export function AppSidebar() {
-  const pathname = usePathname();
 
   return (
     <Sidebar collapsible="icon">
@@ -33,20 +75,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Playlists</SidebarGroupLabel>
           <SidebarMenu>
-            {playlists.map((playlist) => (
-              <SidebarMenuItem key={playlist.id}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith(`/playlist/${playlist.id}`)}
-                  tooltip={playlist.name}
-                >
-                  <Link href={`/playlist/${playlist.id}`}>
-                    <ListVideo />
-                    <span>{playlist.name}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            <PlaylistItems />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

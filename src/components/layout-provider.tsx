@@ -3,6 +3,7 @@
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import dynamic from 'next/dynamic';
+import { DatabaseSeeder } from './database-seeder';
 
 const AppHeader = dynamic(() => import('@/components/app-header').then(mod => mod.AppHeader), { ssr: false });
 const AppSidebar = dynamic(() => import('@/components/app-sidebar').then(mod => mod.AppSidebar), { ssr: false });
@@ -10,6 +11,7 @@ const AppSidebar = dynamic(() => import('@/components/app-sidebar').then(mod => 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
     return (
         <SidebarProvider defaultOpen={false}>
+          <DatabaseSeeder />
           <AppSidebar />
           <SidebarInset>
             <AppHeader />
