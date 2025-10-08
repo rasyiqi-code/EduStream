@@ -3,13 +3,19 @@
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { demoVideos, demoPlaylists } from '@/lib/seed-data';
+
+
+// A simple flag in localStorage to ensure we only seed once per client.
+const SEEDING_FLAG = 'firestore_seeded_v2';
+
 
 function GoogleIcon() {
   return (
@@ -36,6 +42,51 @@ export default function LoginPage() {
     // Any subsequent Firestore permission errors will now be caught by the global handler.
     signInWithPopup(auth, provider);
   };
+  
+  const seedDatabase = useCallback(async () => {
+      if (!firestore) return;
+      const hasBeenSeeded = localStorage.getItem(SEEDING_FLAG);
+      if (hasBeenSeeded === 'true') return;
+
+      console.log("Checking if database needs seeding...");
+      const videosCollection = collection(firestore, 'videos');
+      const videosSnapshot = await getDocs(videosCollection);
+
+      if (!videosSnapshot.empty) {
+        console.log("Database already contains data. Seeding skipped.");
+        localStorage.setItem(SEEDING_FLAG, 'true');
+        return;
+      }
+
+      console.log("Database is empty. Seeding demo data...");
+      const batch = writeBatch(firestore);
+
+      demoVideos.forEach((video) => {
+        const videoRef = doc(firestore, 'videos', video.id);
+        const videoData = { ...video, uploadDate: serverTimestamp() };
+        delete (videoData as any).id;
+        batch.set(videoRef, videoData);
+      });
+
+      demoPlaylists.forEach((playlist) => {
+        const playlistRef = doc(firestore, 'playlists', playlist.id);
+        batch.set(playlistRef, playlist);
+      });
+
+      try {
+        await batch.commit();
+        console.log("Demo data successfully seeded to Firestore.");
+        localStorage.setItem(SEEDING_FLAG, 'true');
+      } catch (error) {
+        console.error("Error seeding database:", error);
+         toast({
+            variant: "destructive",
+            title: "Database Seeding Failed",
+            description: "Could not add demo data. Check console for errors.",
+        });
+      }
+    }, [firestore, toast]);
+
 
   const updateUserProfile = useCallback((user: any) => {
     if (!firestore || !user) return;
@@ -54,12 +105,14 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    // When user object is available after sign-in, update profile and redirect.
-    if (user) {
+    // When user object is available after sign-in, update profile, seed DB, and redirect.
+    if (user && firestore) {
       updateUserProfile(user);
-      router.push('/');
+      seedDatabase().then(() => {
+          router.push('/');
+      });
     }
-  }, [user, router, updateUserProfile]);
+  }, [user, firestore, router, updateUserProfile, seedDatabase]);
 
   if (isUserLoading) {
     return (
@@ -76,7 +129,7 @@ export default function LoginPage() {
       return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-                <p>Redirecting...</p>
+                <p>Setting up your account and redirecting...</p>
             </div>
         </div>
       )
