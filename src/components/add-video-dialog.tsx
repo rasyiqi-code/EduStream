@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter }from "next/navigation";
 import { PlusCircle, Clapperboard, Youtube } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,8 +30,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase";
-import { collection, serverTimestamp } from "firebase/firestore";
+import { useFirestore, useUser } from "@/firebase";
+import { collection, serverTimestamp, addDoc } from "firebase/firestore";
 import type { Video } from "@/lib/types";
 
 const formSchema = z.object({
@@ -49,6 +50,7 @@ export function AddVideoDialog() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,7 +68,7 @@ export function AddVideoDialog() {
     return (match && match[2].length === 11) ? match[2] : null;
   }
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user) {
         toast({
             variant: "destructive",
@@ -84,7 +86,6 @@ export function AddVideoDialog() {
       duration: 0, 
       channel: user.displayName || "Anonymous",
       channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
-      // Add authorId to link video to the user
       authorId: user.uid,
     };
 
@@ -104,16 +105,31 @@ export function AddVideoDialog() {
     } else {
       videoData.videoUrl = values.url;
     }
-
-    const videosCollection = collection(firestore, 'videos');
-    addDocumentNonBlocking(videosCollection, videoData);
     
-    toast({
-      title: "Video Added!",
-      description: `${values.title} has been successfully added to the library.`,
-    });
-    form.reset();
-    setOpen(false);
+    try {
+        const videosCollection = collection(firestore, 'videos');
+        const docRef = await addDoc(videosCollection, videoData);
+        
+        toast({
+          title: "Video Added!",
+          description: `${values.title} has been successfully added.`,
+        });
+        
+        form.reset();
+        setOpen(false);
+        
+        // Redirect to the new video's watch page
+        router.push(`/watch/${docRef.id}`);
+
+    } catch(e: any) {
+        console.error("Error adding video: ", e);
+        toast({
+            variant: "destructive",
+            title: "Error adding video",
+            description: "Could not add video. See console for details.",
+        });
+    }
+
   }
 
   return (
