@@ -62,8 +62,8 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
-export default function WatchPage({ params }: { params: { id: string } }) {
-  const video = videos.find((v) => v.id === params.id);
+export default function WatchPage({ params: { id } }: { params: { id: string } }) {
+  const video = videos.find((v) => v.id === id);
 
   if (!video) {
     notFound();

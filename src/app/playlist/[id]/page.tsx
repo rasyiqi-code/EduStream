@@ -39,15 +39,15 @@ function MP4Player({ videoUrl }: { videoUrl: string }) {
 }
 
 
-export default function PlaylistPage({ params }: { params: { id: string } }) {
+export default function PlaylistPage({ params: { id } }: { params: { id: string } }) {
     const searchParams = useSearchParams();
-    const playlist = playlists.find((p) => p.id === params.id);
+    const playlist = playlists.find((p) => p.id === id);
 
     if (!playlist) {
         notFound();
     }
     
-    const playlistVideos = playlist.videoIds.map(id => videos.find(v => v.id === id)).filter(Boolean);
+    const playlistVideos = playlist.videoIds.map(videoId => videos.find(v => v.id === videoId)).filter(Boolean);
 
     const currentVideoId = searchParams.get('v') || playlist.videoIds[0];
     const currentVideo = videos.find(v => v.id === currentVideoId);
