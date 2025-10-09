@@ -114,7 +114,6 @@ export default function LoginPage() {
 
     const userDocRef = doc(firestore, 'users', user.uid);
     
-    // Efficiently check if user doc exists. We still need this to avoid re-calculating the role.
     const userDocSnap = await getDoc(userDocRef).catch(err => {
         const contextualError = new FirestorePermissionError({ operation: 'get', path: userDocRef.path });
         errorEmitter.emit('permission-error', contextualError);
@@ -126,8 +125,8 @@ export default function LoginPage() {
         return;
     }
     
-    // Default new users to 'student' role for security. 
-    // An admin can change the role later.
+    // Default all new users to 'student' role.
+    // Role changes can be done manually in the Firestore console.
     const role = 'student';
 
     const userProfile: UserProfile = {
@@ -139,7 +138,6 @@ export default function LoginPage() {
     };
     
     // Use set with merge to safely create the document.
-    // This will create the doc if it doesn't exist, or update if it somehow was created in a race condition.
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
   }, [firestore]);
