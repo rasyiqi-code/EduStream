@@ -8,7 +8,7 @@ import type { Video, Playlist, UserProfile } from '@/lib/types';
 import { VideoCard } from "@/components/video-card";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Film, ListVideo, Users } from 'lucide-react';
+import { Film, ListVideo } from 'lucide-react';
 import { AddVideoDialog } from '@/components/add-video-dialog';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -109,11 +109,16 @@ function InstructorDashboard() {
     const firestore = useFirestore();
 
     const videosQuery = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return query(collection(firestore, 'videos'), where('authorId', '==', user.uid), orderBy('uploadDate', 'desc'));
-    }, [firestore, user]);
+        if (!firestore) return null;
+        return query(collection(firestore, 'videos'), orderBy('uploadDate', 'desc'));
+    }, [firestore]);
 
-    const { data: videos, isLoading } = useCollection<Video>(videosQuery);
+    const { data: allVideos, isLoading } = useCollection<Video>(videosQuery);
+
+    const myVideos = React.useMemo(() => {
+        if (!allVideos || !user) return [];
+        return allVideos.filter(video => video.authorId === user.uid);
+    }, [allVideos, user]);
     
     return (
         <div>
@@ -123,14 +128,14 @@ function InstructorDashboard() {
             </div>
             <h2 className="text-2xl font-bold tracking-tight mb-4">My Videos</h2>
             {isLoading && <VideoGridSkeleton />}
-            {!isLoading && videos?.length === 0 && (
+            {!isLoading && myVideos.length === 0 && (
                 <div className="text-center py-10 border-2 border-dashed rounded-lg">
                     <h3 className="text-lg font-medium text-muted-foreground">No Videos Uploaded</h3>
                     <p className="text-sm text-muted-foreground mb-4">Start by adding your first video.</p>
                 </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-                {videos?.map((video) => (
+                {myVideos.map((video) => (
                     <VideoCard key={video.id} video={video} />
                 ))}
             </div>
