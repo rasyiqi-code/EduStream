@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -13,7 +14,7 @@ import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
     return (
-        <div className="aspect-video w-full">
+        <div className="aspect-video w-full flex-1">
             <video
                 className="w-full h-full rounded-xl bg-black"
                 controls
@@ -166,8 +167,8 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 h-[calc(100vh-8rem)]">
+          <div className="lg:col-span-2 flex flex-col">
             {video.youtubeId ? (
                 <CustomYouTubePlayer youtubeId={video.youtubeId} />
             ) : video.videoUrl ? (
@@ -197,7 +198,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                 </div>
             </div>
           </div>
-          <aside className="lg:col-span-1">
+          <aside className="lg:col-span-1 overflow-y-auto">
             <SuggestedPlaylists />
           </aside>
         </div>

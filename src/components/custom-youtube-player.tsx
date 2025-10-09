@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -20,7 +21,7 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
   const videoUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div className="relative w-full overflow-hidden rounded-xl bg-black flex-1">
       {hasWindow ? (
         <>
           <ReactPlayer
@@ -32,7 +33,7 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
             config={{
               youtube: {
                 playerVars: {
-                  controls: 0,
+                  controls: 1, // Show controls for better UX
                   showinfo: 0, 
                   rel: 0,
                   modestbranding: 1
@@ -40,8 +41,6 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
               }
             }}
           />
-          {/* This overlay prevents the title from showing on hover */}
-          <div className="absolute inset-0 w-full h-full pointer-events-none"></div>
         </>
       ) : (
         <Skeleton className="w-full h-full" />
