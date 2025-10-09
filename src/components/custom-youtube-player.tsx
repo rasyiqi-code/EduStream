@@ -31,12 +31,15 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
           config={{
             youtube: {
               playerVars: {
-                // This is the key change: force YouTube's native controls AND top info bar off.
-                controls: 0,
-                // These are extra measures to ensure a clean player, even if some are deprecated.
-                showinfo: 0,
-                autoplay: 1,
+                // Hide all YouTube's native UI
+                controls: 0, 
+                // Hide title, uploader info - deprecated but included for robustness
+                showinfo: 0, 
+                // Autoplay the video
+                autoplay: 1, 
+                 // Hide the YouTube logo (partially effective)
                 modestbranding: 1,
+                // This is the key change: Do not show related videos when playback ends
                 rel: 0
               }
             }
