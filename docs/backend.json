@@ -131,6 +131,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "authorId": {
+          "type": "string",
+          "description": "The UID of the user who created the playlist."
         }
       },
       "required": [

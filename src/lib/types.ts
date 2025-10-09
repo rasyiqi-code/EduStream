@@ -22,6 +22,7 @@ export type Playlist = {
   name: string;
   description: string;
   videoIds: string[];
+  authorId?: string; // ID of the instructor who created the playlist
 };
 
 export type UserProfile = {

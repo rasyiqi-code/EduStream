@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Playlist } from '@/lib/types';
+import type { Playlist, Video } from '@/lib/types';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,10 +30,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from './ui/skeleton';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama harus memiliki minimal 3 karakter.' }),
   description: z.string().optional(),
+  videoIds: z.array(z.string()).default([]),
 });
 
 type PlaylistFormProps = {
@@ -51,19 +57,30 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
     defaultValues: {
       name: '',
       description: '',
+      videoIds: [],
     },
   });
+
+  const videosQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    // Only fetch videos created by the current instructor
+    return query(collection(firestore, 'videos'), where('authorId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
 
   useEffect(() => {
     if (playlist) {
       form.reset({
         name: playlist.name,
         description: playlist.description,
+        videoIds: playlist.videoIds || [],
       });
     } else {
       form.reset({
         name: '',
         description: '',
+        videoIds: [],
       });
     }
   }, [playlist, form]);
@@ -84,6 +101,8 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
         const updatedData = {
           name: values.name,
           description: values.description || '',
+          videoIds: values.videoIds,
+          authorId: user.uid, // ensure authorId is present
         };
         updateDocumentNonBlocking(playlistRef, updatedData);
         toast({
@@ -93,9 +112,10 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
     } else {
         // Create new playlist
         const newPlaylistData = {
-          ...values,
+          name: values.name,
           description: values.description || '',
-          videoIds: [],
+          videoIds: values.videoIds,
+          authorId: user.uid,
         };
         addDocumentNonBlocking(collection(firestore, 'playlists'), newPlaylistData);
         toast({
@@ -108,13 +128,13 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Playlist' : 'Buat Playlist Baru'}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Ubah detail playlist Anda.'
-              : 'Isi detail untuk playlist baru Anda.'}
+              ? 'Ubah detail playlist Anda dan pilih video yang akan dimasukkan.'
+              : 'Isi detail untuk playlist baru Anda dan pilih video.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -145,6 +165,67 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                 </FormItem>
               )}
             />
+            <FormField
+                control={form.control}
+                name="videoIds"
+                render={() => (
+                    <FormItem>
+                    <div className="mb-4">
+                        <FormLabel className="text-base">Pilih Video</FormLabel>
+                        <FormDescription>
+                            Pilih video yang ingin Anda masukkan ke dalam playlist ini.
+                        </FormDescription>
+                    </div>
+                     <ScrollArea className="h-64 rounded-md border p-4">
+                        {areVideosLoading ? (
+                             <div className="space-y-4">
+                                <Skeleton className="h-14 w-full" />
+                                <Skeleton className="h-14 w-full" />
+                                <Skeleton className="h-14 w-full" />
+                            </div>
+                        ) : videos && videos.length > 0 ? (
+                            videos.map((video) => (
+                                <FormField
+                                key={video.id}
+                                control={form.control}
+                                name="videoIds"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={video.id}
+                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-accent transition-colors"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(video.id)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...field.value, video.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                    (value) => value !== video.id
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <Image src={video.thumbnailUrl} alt={video.title} width={80} height={45} className="rounded-md aspect-video object-cover" />
+                                        <FormLabel className="font-normal w-full cursor-pointer">
+                                            {video.title}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-10">Anda belum mengunggah video apa pun.</p>
+                        )}
+                    </ScrollArea>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
             <DialogFooter>
               <Button type="submit">Simpan</Button>
             </DialogFooter>
