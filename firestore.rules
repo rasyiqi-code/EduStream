@@ -1,111 +1,94 @@
 /**
- * @file Firebase Security Rules for EduStream platform.
- *
- * @core_philosophy This ruleset enforces a user-ownership model for user profiles,
- * while allowing public read access to videos and playlists. Writes to videos and
- * playlists are restricted to the user who created them (the "author"). The system
- * does not currently implement global roles or shared access patterns.
- *
- * @data_structure
- * - `/users/{userId}`: Stores user profile data.
- * - `/videos/{videoId}`: Stores video metadata.
- * - `/playlists/{playlistId}`: Stores playlist metadata.
- *
- * @key_security_decisions
- * - User profiles are strictly owned by the user with the matching UID.
- * - Listing of users is explicitly denied to protect user privacy.
- * - Videos and playlists are publicly readable but only writable by their respective authors.
- * - Data shape validation is relaxed in this prototyping phase to allow for rapid iteration.
- *
- * @denormalization_for_authorization
- * - Videos and Playlists include an `authorId` field to simplify ownership checks.
- *   This avoids the need for complex queries or additional reads to determine the author.
+ * @description This ruleset enforces a strict user-ownership model for user profiles and public read access with owner-only writes for videos and playlists.
+ * @dataStructure
+ *   - /users/{userId}: Stores user profile data, accessible only to the user themselves.
+ *   - /videos/{videoId}: Stores video metadata, publicly readable, but only editable by the video's author.
+ *   - /playlists/{playlistId}: Stores playlist metadata, publicly readable, but only editable by the playlist's author.
+ * @keySecurityDecisions
+ *   - Users can only read and write their own profile data.
+ *   - Listing of users is explicitly denied to prevent information harvesting.
+ *   - Videos and Playlists are publicly readable but have owner-only write access based on the `authorId` field.
+ *   - Data shape validation is relaxed to allow for rapid prototyping, focusing on authorization.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Protects user profiles. Only the user with the matching UID can read or write their own profile.
+     * @description Controls access to user profile documents.  Only the user themselves can read or write their profile.
      * @path /users/{userId}
-     * @allow (create) Signed-in user with UID 'user123' can create a profile at /users/user123.
-     * @allow (get, update, delete) Signed-in user with UID 'user123' can get, update, or delete their own profile at /users/user123.
-     * @deny (create) Signed-in user with UID 'user456' cannot create a profile at /users/user123.
-     * @deny (get, update, delete) Signed-in user with UID 'user456' cannot get, update, or delete the profile at /users/user123.
-     * @deny (list) Listing all users is prohibited.
+     * @allow (get, create, update, delete) if the user's UID matches the {userId} path parameter.
+     * @deny (get, create, update, delete) if the user's UID does not match the {userId} path parameter.
      * @principle Enforces document ownership for all operations on user profiles.
      */
     match /users/{userId} {
+      // isOwner() utility function
       function isOwner(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
 
+      // isSignedIn() utility function
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
       allow get: if isOwner(userId);
       allow list: if false;
-
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
       allow update: if isOwner(userId);
       allow delete: if isOwner(userId);
     }
 
     /**
-     * @description Controls access to video documents.  Allows public read access, but restricts writes to the video's author.
+     * @description Controls access to video documents.  Anyone can read videos, but only the author can create, update, or delete.
      * @path /videos/{videoId}
-     * @allow (get, list) Any user can read video metadata.
-     * @allow (create) Signed-in user can create a video if request.auth.uid matches resource.data.authorId.
-     * @allow (update, delete) Signed-in user can update/delete a video if request.auth.uid matches resource.data.authorId and the document exists.
-     * @deny (create) Signed-in user cannot create a video if request.auth.uid does not match resource.data.authorId.
-     * @deny (update, delete) Signed-in user cannot update/delete a video if request.auth.uid does not match resource.data.authorId or the document does not exist.
-     * @principle Allows public read access but enforces owner-only writes.
+     * @allow (get, list) to anyone.
+     * @allow (create) if the request includes a valid `authorId` field matching the user's UID.
+     * @allow (update, delete) if the user is the author of the video.
+     * @deny (create, update, delete) if the user is not the author of the video.
+     * @principle Public read access with owner-only write access based on the `authorId` field.
      */
     match /videos/{videoId} {
+      // isOwner() utility function
+      function isOwner() {
+        return request.auth != null && resource.data.authorId == request.auth.uid;
+      }
+
+      // isSignedIn() utility function
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(authorId) {
-        return isSignedIn() && request.auth.uid == authorId;
-      }
-
-      function isExistingOwner(authorId) {
-        return isOwner(authorId);
-      }
-
       allow get, list: if true;
-
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.authorId == request.auth.uid && resource.data.authorId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && isOwner();
+      allow delete: if isSignedIn() && isOwner();
     }
 
     /**
-     * @description Controls access to playlist documents. Allows public read access, but restricts writes to the playlist's author.
+     * @description Controls access to playlist documents.  Anyone can read playlists, but only the author can create, update, or delete.
      * @path /playlists/{playlistId}
-     * @allow (get, list) Any user can read playlist metadata.
-     * @allow (create) Signed-in user can create a playlist if request.auth.uid matches resource.data.authorId.
-     * @allow (update, delete) Signed-in user can update/delete a playlist if request.auth.uid matches resource.data.authorId and the document exists.
-     * @deny (create) Signed-in user cannot create a playlist if request.auth.uid does not match resource.data.authorId.
-     * @deny (update, delete) Signed-in user cannot update/delete a playlist if request.auth.uid does not match resource.data.authorId or the document does not exist.
-     * @principle Allows public read access but enforces owner-only writes.
+     * @allow (get, list) to anyone.
+     * @allow (create) if the request includes a valid `authorId` field matching the user's UID.
+     * @allow (update, delete) if the user is the author of the playlist.
+     * @deny (create, update, delete) if the user is not the author of the playlist.
+     * @principle Public read access with owner-only write access based on the `authorId` field.
      */
     match /playlists/{playlistId} {
+      // isOwner() utility function
+      function isOwner() {
+        return request.auth != null && resource.data.authorId == request.auth.uid;
+      }
+
+      // isSignedIn() utility function
       function isSignedIn() {
         return request.auth != null;
       }
 
-      function isOwner(authorId) {
-        return isSignedIn() && request.auth.uid == authorId;
-      }
-
-      function isExistingOwner(authorId) {
-        return isOwner(authorId);
-      }
-
       allow get, list: if true;
-
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && request.resource.data.authorId == request.auth.uid && resource.data.authorId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && isOwner();
+      allow delete: if isSignedIn() && isOwner();
     }
   }
 }
