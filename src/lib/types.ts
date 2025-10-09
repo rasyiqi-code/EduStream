@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase/firestore";
+import { FieldValue, Timestamp } from "firebase/firestore";
 
 export type Video = {
   id: string;
@@ -9,7 +9,7 @@ export type Video = {
   youtubeId?: string; // For YouTube embeds
   channel: string;
   channelAvatarUrl: string;
-  uploadDate: FieldValue;
+  uploadDate: Timestamp;
   duration: number;
   authorId?: string; // Added to link video to user
 };
