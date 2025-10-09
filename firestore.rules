@@ -1,85 +1,89 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset implements a hybrid security model, balancing open access for public content with strict ownership and role-based controls for user-specific data.
- *
- * Data Structure:
- * - /users/{userId}: Stores user profiles, accessible only to the user themselves (owner-only).
- * - /videos/{videoId}: Stores video metadata; publicly readable, but create/update/delete restricted to instructors and admins. Requires the authorId to match the authenticated user's UID on creation.
- * - /playlists/{playlistId}: Stores playlist metadata; publicly readable, but create/update/delete restricted to instructors and admins.
+ * @description This ruleset enforces a role-based access control model for the EduStream application.
+ * All data is stored in top-level collections: /users/{userId}, /videos/{videoId}, and /playlists/{playlistId}.
  *
  * Key Security Decisions:
- * - User listing is explicitly denied to protect user privacy.
- * - Videos and playlists are publicly readable to facilitate content discovery.
- * - Role-based access control is used for creating, updating, and deleting videos and playlists.
- *
- * Denormalization for Authorization:
- * - Videos include an `authorId` field to simplify ownership checks for updates and deletes.
+ * - Users can only read and write their own profile data in /users/{userId}.
+ * - Videos are publicly readable, but only instructors or admins can create, update, or delete them.
+ * - Playlists are publicly readable, but only admins can create, update, or delete them.
+ * - Listing of /users is disallowed.
+ * - Listing of /videos is allowed.
+ * - Listing of /playlists is allowed.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Restricts access to user profiles, allowing only the owner to read and write their own profile.
+     * @description Enforces user-ownership for profile data. Users can only read and write their own profile.
      * @path /users/{userId}
-     * @allow (get, create, update, delete) if the user is the owner of the profile (uid matches).
-     * @deny (get, create, update, delete) if the user is not the owner of the profile.
-     * @principle Enforces strict user-ownership for profile data.
+     * @allow (create, update, get, delete, list) if the request is made by the user with matching {userId}.
+     * @deny (create, update, get, delete) if the request is made by a different user.
+     * @principle Enforces document ownership for writes; restricts access to a user's own data tree.
      */
     match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
       allow get: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
-      allow update: if isOwner(userId) && resource.data.uid == request.resource.data.uid;
+
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Allows public reading of video metadata, but restricts creation, updating, and deletion to instructors and admins.
+     * @description Allows public read access to videos, but restricts creation, updating, and deletion to instructors and admins.
      * @path /videos/{videoId}
-     * @allow (get, list) anyone to read video metadata.
-     * @allow (create) if the user is an instructor or admin and the authorId matches the authenticated user's UID.
-     * @allow (update, delete) if the user is an instructor or admin and owns the video.
-     * @deny (create, update, delete) if the user is not an instructor or admin, or does not own the video.
-     * @principle Provides open access to video content while maintaining control over content creation.
+     * @allow (get, list) any read request.
+     * @allow (create, update, delete) only if the user has the role of 'instructor' or 'admin'.
+     * @deny (create, update, delete) if the user is not authenticated or does not have the required role.
+     * @principle Allows public reads with owner-only writes; enforces role-based access control.
      */
     match /videos/{videoId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isInstructorOrAdmin() {
+        return isSignedIn() && (request.auth.token.role == 'instructor' || request.auth.token.role == 'admin');
+      }
+
       allow get, list: if true;
-      allow create: if isSignedIn() && (hasRole(['admin', 'instructor'])) && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && (hasRole(['admin', 'instructor'])) && isOwner(resource.data.authorId) && resource != null;
-      allow delete: if isSignedIn() && (hasRole(['admin', 'instructor'])) && isExistingOwner(resource.data.authorId);
+
+      allow create: if isInstructorOrAdmin() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isInstructorOrAdmin() && resource != null;
+      allow delete: if isInstructorOrAdmin() && resource != null;
     }
 
     /**
-     * @description Allows public reading of playlist metadata, but restricts creation, updating, and deletion to instructors and admins.
+     * @description Allows public read access to playlists, but restricts creation, updating, and deletion to admins.
      * @path /playlists/{playlistId}
-     * @allow (get, list) anyone to read playlist metadata.
-     * @allow (create, update, delete) if the user is an instructor or admin.
-     * @deny (create, update, delete) if the user is not an instructor or admin.
-     * @principle Provides open access to playlist information while maintaining control over content creation.
+     * @allow (get, list) any read request.
+     * @allow (create, update, delete) only if the user has the role of 'admin'.
+     * @deny (create, update, delete) if the user is not authenticated or does not have the required role.
      */
     match /playlists/{playlistId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isAdmin() {
+        return isSignedIn() && request.auth.token.role == 'admin';
+      }
+
       allow get, list: if true;
-      allow create: if isSignedIn() && hasRole(['admin', 'instructor']);
-      allow update: if isSignedIn() && hasRole(['admin', 'instructor']) && resource != null;
-      allow delete: if isSignedIn() && hasRole(['admin', 'instructor']) && resource != null;
-    }
 
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-        return isSignedIn() && isOwner(userId) && resource != null;
-    }
-
-    function hasRole(roles) {
-      return isSignedIn() && roles.hasAny(request.auth.token.role);
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
     }
   }
 }
