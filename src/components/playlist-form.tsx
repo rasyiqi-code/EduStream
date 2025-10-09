@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -202,7 +203,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                             Pilih video yang ingin Anda masukkan ke dalam playlist ini.
                         </FormDescription>
                     </div>
-                     <ScrollArea className="h-64 rounded-md border p-4">
+                     <ScrollArea className="h-[25vh] rounded-md border p-4">
                         {areVideosLoading ? (
                              <div className="space-y-4">
                                 <Skeleton className="h-14 w-full" />
