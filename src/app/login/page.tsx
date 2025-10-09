@@ -3,7 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
-import { doc, getDoc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, getDocs, collection, query, limit, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,8 +36,14 @@ export default function LoginPage() {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
-        // After successful sign-in, the useEffect will handle the rest.
+        const result = await signInWithPopup(auth, provider);
+        // `useEffect` is not reliable for this flow.
+        // We will manually trigger the post-login logic.
+        if (result.user && firestore) {
+          await updateUserProfile(result.user);
+          await seedDatabase();
+          router.push('/');
+        }
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user') {
             console.error("Sign-in error:", error);
@@ -89,10 +95,7 @@ export default function LoginPage() {
         batch.set(playlistRef, playlistData);
       });
 
-      batch.commit().then(() => {
-        console.log("Demo data successfully seeded to Firestore.");
-        localStorage.setItem(SEEDING_FLAG, 'true');
-      }).catch(err => {
+      batch.commit().catch(err => {
         const contextualError = new FirestorePermissionError({ operation: 'write', path: '[batch]' });
         errorEmitter.emit('permission-error', contextualError);
         toast({
@@ -101,6 +104,9 @@ export default function LoginPage() {
             description: "Could not add demo data.",
         });
       });
+      
+      console.log("Demo data successfully seeded to Firestore.");
+      localStorage.setItem(SEEDING_FLAG, 'true');
 
     }, [firestore, toast]);
 
@@ -115,27 +121,30 @@ export default function LoginPage() {
       return null;
     });
 
-    if (!userDoc) return; // Error was thrown and handled
+    if (!userDoc) return; 
 
+    // If user profile already exists, do nothing.
     if (userDoc.exists()) {
-        return; // User profile already exists
+        return; 
     }
 
-    const usersCollectionRef = collection(firestore, 'users');
-    const existingUsers = await getDocs(usersCollectionRef).catch(err => {
+    // Check if this is the very first user to assign admin role.
+    const usersQuery = query(collection(firestore, 'users'), limit(1));
+    const existingUsersSnap = await getDocs(usersQuery).catch(err => {
         const contextualError = new FirestorePermissionError({ operation: 'list', path: 'users' });
         errorEmitter.emit('permission-error', contextualError);
         return null;
     });
 
-    if (!existingUsers) return; // Error was thrown and handled
+    if (!existingUsersSnap) return;
 
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
-      role: existingUsers.empty ? 'admin' : 'student',
+      // If the query for existing users comes back empty, they are the first user. Make them admin.
+      role: existingUsersSnap.empty ? 'admin' : 'student',
     };
     
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
@@ -144,14 +153,11 @@ export default function LoginPage() {
 
 
   useEffect(() => {
-    if (user && firestore) {
-      updateUserProfile(user).then(() => {
-        seedDatabase().then(() => {
-            router.push('/');
-        });
-      });
+    // This effect now only redirects if a user is already logged in.
+    if (!isUserLoading && user) {
+      router.push('/');
     }
-  }, [user, firestore, router, updateUserProfile, seedDatabase]);
+  }, [user, isUserLoading, router]);
 
   if (isUserLoading) {
     return (
@@ -163,11 +169,13 @@ export default function LoginPage() {
     );
   }
   
+  // This screen should not be seen if the user is logged in.
+  // The useEffect above will redirect them.
   if (user) {
-      return (
+       return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-                <p>Setting up your account and redirecting...</p>
+                <p>Redirecting...</p>
             </div>
         </div>
       )
