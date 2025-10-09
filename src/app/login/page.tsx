@@ -36,21 +36,21 @@ export default function LoginPage() {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
-        if (result.user && firestore) {
-          await updateUserProfile(result.user);
-          await seedDatabase();
-          router.push('/');
-        }
+      const result = await signInWithPopup(auth, provider);
+      if (result.user && firestore) {
+        await updateUserProfile(result.user);
+        await seedDatabase();
+        router.push('/');
+      }
     } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user') {
-            console.error("Sign-in error:", error);
-            toast({
-                variant: "destructive",
-                title: "Sign-in Failed",
-                description: error.message || "An unexpected error occurred during sign-in.",
-            });
-        }
+      if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Sign-in error:", error);
+          toast({
+              variant: "destructive",
+              title: "Sign-in Failed",
+              description: error.message || "An unexpected error occurred during sign-in.",
+          });
+      }
     }
   };
   
@@ -125,22 +125,10 @@ export default function LoginPage() {
         // User profile already exists, do nothing.
         return;
     }
-
-    // User profile does not exist, so we create it.
-    // Check if this is the very first user to assign admin role.
-    const usersQuery = query(collection(firestore, 'users'), limit(1));
-    const existingUsersSnap = await getDocs(usersQuery).catch(err => {
-        const contextualError = new FirestorePermissionError({ operation: 'list', path: 'users' });
-        errorEmitter.emit('permission-error', contextualError);
-        return null;
-    });
-
-    if (!existingUsersSnap) {
-        // Error occurred and was handled, so we stop.
-        return;
-    }
     
-    const role = existingUsersSnap.empty ? 'admin' : 'student';
+    // Default new users to 'student' role for security. 
+    // An admin can change the role later.
+    const role = 'student';
 
     const userProfile: UserProfile = {
       uid: user.uid,
