@@ -185,7 +185,7 @@ function PlaylistVideos({ playlist }: { playlist: Playlist & {id: string} }) {
 export default function PlaylistPage() {
     const firestore = useFirestore();
     const params = useParams();
-    const id = params.id as string;
+    const id = params.id;
     
     // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
     if (!firestore || typeof id !== 'string') {

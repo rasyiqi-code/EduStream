@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound, useParams } from 'next/navigation';
-import { doc, collection, query, where, limit, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, limit, Timestamp, Firestore } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
@@ -115,7 +115,7 @@ function WatchPageSkeleton() {
 export default function WatchPage() {
     const firestore = useFirestore();
     const params = useParams();
-    const id = params.id as string;
+    const id = params.id;
     
     // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
     if (!firestore || typeof id !== 'string') {
@@ -126,7 +126,7 @@ export default function WatchPage() {
 }
 
 
-function WatchPageContent({ firestore, id }: { firestore: any, id: string }) {
+function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string }) {
     const videoRef = useMemoFirebase(() => {
         // 'id' is guaranteed to be a string here.
         return doc(firestore, 'videos', id);
@@ -150,13 +150,13 @@ function WatchPageContent({ firestore, id }: { firestore: any, id: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <div className="lg:col-span-2">
             {video.youtubeId ? (
-              <CustomYouTubePlayer youtubeId={video.youtubeId} />
+                <CustomYouTubePlayer youtubeId={video.youtubeId} />
             ) : video.videoUrl ? (
-              <MP4Player videoUrl={video.videoUrl} />
+                <MP4Player videoUrl={video.videoUrl} />
             ) : (
-              <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
-                <p>Video source not available.</p>
-              </div>
+                <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
+                    <p>Video source not available.</p>
+                </div>
             )}
             <div className="mt-4 space-y-4">
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>

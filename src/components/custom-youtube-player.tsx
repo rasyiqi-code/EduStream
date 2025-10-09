@@ -32,9 +32,7 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
             config={{
               youtube: {
                 playerVars: {
-                  // This is the most important part: it hides all YouTube's native UI
-                  controls: 0, 
-                  // These are included for robustness, even if deprecated
+                  controls: 0,
                   showinfo: 0, 
                   rel: 0,
                   modestbranding: 1
