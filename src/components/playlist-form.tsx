@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { collection, query, where, doc, writeBatch, arrayUnion } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Playlist, Video } from '@/lib/types';
 import Image from 'next/image';
@@ -95,6 +95,8 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
       return;
     }
 
+    const batch = writeBatch(firestore);
+
     if (isEditing && playlist) {
         // Update playlist
         const playlistRef = doc(firestore, 'playlists', playlist.id);
@@ -104,25 +106,49 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
           videoIds: values.videoIds,
           authorId: user.uid, // ensure authorId is present
         };
-        updateDocumentNonBlocking(playlistRef, updatedData);
+        batch.update(playlistRef, updatedData);
+
+        // Also update the playlistIds in the associated video documents
+        const videosToUpdate = values.videoIds;
+        videosToUpdate.forEach(videoId => {
+            const videoRef = doc(firestore, 'videos', videoId);
+            batch.update(videoRef, {
+                playlistIds: arrayUnion(playlist.id)
+            });
+        });
+
         toast({
             title: 'Playlist Diperbarui',
             description: 'Perubahan Anda telah disimpan.',
         });
     } else {
         // Create new playlist
+        const newPlaylistRef = doc(collection(firestore, 'playlists'));
         const newPlaylistData = {
+          id: newPlaylistRef.id,
           name: values.name,
           description: values.description || '',
           videoIds: values.videoIds,
           authorId: user.uid,
         };
-        addDocumentNonBlocking(collection(firestore, 'playlists'), newPlaylistData);
+        batch.set(newPlaylistRef, newPlaylistData);
+        
+        // Also update the playlistIds in the associated video documents
+        const videosToUpdate = values.videoIds;
+        videosToUpdate.forEach(videoId => {
+            const videoRef = doc(firestore, 'videos', videoId);
+            batch.update(videoRef, {
+                playlistIds: arrayUnion(newPlaylistRef.id)
+            });
+        });
+
         toast({
             title: 'Playlist Dibuat',
             description: 'Playlist baru Anda telah dibuat.',
         });
     }
+    
+    await batch.commit();
     setIsOpen(false);
   };
 

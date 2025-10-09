@@ -97,6 +97,7 @@ export function AddVideoDialog() {
       channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
       authorId: user.uid,
       authorRole: userProfile.role,
+      playlistIds: [], // default to empty array
     };
 
     if (values.videoType === 'youtube') {

@@ -13,6 +13,7 @@ export type Video = {
   channelAvatarUrl: string;
   uploadDate: Timestamp;
   duration: number;
+  playlistIds?: string[];
   authorId?: string;
   authorRole?: UserRole; // To track who uploaded
 };

@@ -13,6 +13,7 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'Khan Academy',
     channelAvatarUrl: 'https://picsum.photos/seed/ka/48/48',
     duration: 549,
+    playlistIds: ['cs-101'],
   },
   {
     id: 'what-is-an-algorithm',
@@ -23,6 +24,7 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'CrashCourse',
     channelAvatarUrl: 'https://picsum.photos/seed/cc/48/48',
     duration: 689,
+    playlistIds: ['cs-101'],
   },
   {
     id: 'renaissance-art',
@@ -33,6 +35,7 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'ArtExplorers',
     channelAvatarUrl: 'https://picsum.photos/seed/ae/48/48',
     duration: 832,
+    playlistIds: ['history-of-art'],
   },
   {
     id: 'ancient-rome',
@@ -43,6 +46,7 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'HistoryUncovered',
     channelAvatarUrl: 'https://picsum.photos/seed/hu/48/48',
     duration: 1250,
+    playlistIds: ['ancient-civilizations'],
   }
 ];
 
