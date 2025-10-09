@@ -7,30 +7,12 @@ import Link from 'next/link';
 import { notFound, useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { PlayCircle, Clock } from 'lucide-react';
+import { PlayCircle } from 'lucide-react';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where, DocumentData, Firestore } from 'firebase/firestore';
 import type { Playlist, Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-
-function formatDuration(seconds: number | undefined | null): string {
-    if (!seconds || seconds <= 0) {
-        return "00:00";
-    }
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    const s = Math.floor(seconds % 60);
-
-    const hDisplay = h > 0 ? `${h}:` : "";
-    const mDisplay = h > 0 && m < 10 ? `0${m}` : m;
-    const sDisplay = s < 10 ? `0${s}` : s;
-    
-    if (h > 0) {
-      return `${hDisplay}${mDisplay}:${sDisplay}`;
-    }
-    return `${m}:${sDisplay}`;
-}
 
 function PlaylistPageSkeleton() {
     return (
@@ -135,10 +117,6 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                                     />
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-lg line-clamp-2">{video.title}</h3>
-                                        <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                            <Clock className="mr-1.5 h-4 w-4" />
-                                            <span>{formatDuration(video.duration)}</span>
-                                        </div>
                                     </div>
                                     <Button asChild variant="secondary">
                                         <Link href={`/watch/${video.id}`}>
