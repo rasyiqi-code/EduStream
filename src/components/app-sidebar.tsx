@@ -91,6 +91,7 @@ function WatchContextSidebar() {
 
     const videosQuery = useMemoFirebase(() => {
         if (!firestore || videoIds.length === 0) return null;
+        // Using JSON.stringify on videoIds to create a stable dependency for useMemoFirebase
         return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
     }, [firestore, JSON.stringify(videoIds)]);
 

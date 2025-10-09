@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from "next/link";
 import { Film, Menu, Search, LogOut } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense } from 'react';
 
@@ -110,25 +111,31 @@ function SearchBarSkeleton() {
 export function AppHeader() {
   const { toggleSidebar, isMobile } = useSidebar();
   const { user } = useUser();
+  const pathname = usePathname();
+  const isWatchPage = pathname.startsWith('/watch/');
   
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      {isMobile ? (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden"
-          onClick={toggleSidebar}
-        >
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">Toggle Sidebar</span>
-        </Button>
-      ) : (
-        <SidebarTrigger />
+      {isWatchPage && (
+        <>
+          {isMobile ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={toggleSidebar}
+            >
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle Sidebar</span>
+            </Button>
+          ) : (
+            <SidebarTrigger />
+          )}
+        </>
       )}
-      <Link href="/" className="hidden items-center gap-2 font-semibold md:flex">
+      <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
         <Film className="h-6 w-6 text-primary" />
-        <span className="text-lg">EduStream</span>
+        <span className="hidden md:inline-block">EduStream</span>
       </Link>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <Suspense fallback={<SearchBarSkeleton />}>
