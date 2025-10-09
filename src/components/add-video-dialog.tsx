@@ -92,7 +92,7 @@ export function AddVideoDialog() {
       description: values.description || "",
       thumbnailUrl: 'https://picsum.photos/seed/6/640/360',
       uploadDate: serverTimestamp(),
-      duration: 0, 
+      duration: 300, // Default to 5 minutes as a placeholder
       channel: user.displayName || "Anonymous",
       channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
       authorId: user.uid,

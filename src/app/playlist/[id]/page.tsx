@@ -14,16 +14,22 @@ import type { Playlist, Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
-function formatDuration(seconds: number): string {
+function formatDuration(seconds: number | undefined | null): string {
+    if (!seconds || seconds <= 0) {
+        return "00:00";
+    }
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = Math.floor(seconds % 60);
 
     const hDisplay = h > 0 ? `${h}:` : "";
-    const mDisplay = m < 10 ? `0${m}` : m;
+    const mDisplay = h > 0 && m < 10 ? `0${m}` : m;
     const sDisplay = s < 10 ? `0${s}` : s;
-
-    return `${hDisplay}${mDisplay}:${sDisplay}`;
+    
+    if (h > 0) {
+      return `${hDisplay}${mDisplay}:${sDisplay}`;
+    }
+    return `${m}:${sDisplay}`;
 }
 
 function PlaylistPageSkeleton() {
