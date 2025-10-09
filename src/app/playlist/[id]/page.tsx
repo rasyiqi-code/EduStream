@@ -106,8 +106,8 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                         {orderedVideos.map((video, index) => (
                              <Card key={video.id} className="hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-3">
-                                  <div className="flex items-start gap-3 md:gap-4">
-                                      <span className="hidden md:block text-lg font-bold text-muted-foreground w-6 text-center pt-1">{index + 1}</span>
+                                  <div className="flex items-center gap-3 md:gap-4">
+                                      <span className="hidden md:block text-lg font-bold text-muted-foreground w-6 text-center">{index + 1}</span>
                                       <Image 
                                           src={video.thumbnailUrl} 
                                           alt={video.title} 
@@ -116,7 +116,7 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                                           className="w-28 md:w-32 rounded-md aspect-video object-cover shrink-0"
                                           data-ai-hint="video thumbnail"
                                       />
-                                      <div className="flex-1 min-w-0">
+                                      <div className="flex-1 min-w-0 flex items-center h-full">
                                           <h3 className="font-semibold text-sm md:text-lg line-clamp-2 leading-snug">{video.title}</h3>
                                       </div>
                                       <Button asChild variant="secondary" size="sm" className="h-8 md:h-10 ml-auto self-center">
