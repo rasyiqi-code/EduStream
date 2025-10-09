@@ -27,7 +27,8 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
           width="100%"
           height="100%"
           playing
-          controls={true} // Use react-player's own clean controls
+          controls={false} // Disable controls on hover
+          light={true} // Show thumbnail first, load player on click
           config={{
             youtube: {
               playerVars: {
@@ -39,7 +40,7 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
                 autoplay: 1, 
                  // Hide the YouTube logo (partially effective)
                 modestbranding: 1,
-                // This is the key change: Do not show related videos when playback ends
+                // Do not show related videos when playback ends
                 rel: 0
               }
             }
