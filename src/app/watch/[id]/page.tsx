@@ -53,7 +53,7 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
 
     const { data: suggested, isLoading } = useCollection<Video>(suggestedQuery);
     
-    if (isLoading) {
+    if (isLoading || !firestore) {
         return <SuggestedVideosSkeleton />;
     }
     
@@ -135,18 +135,17 @@ function WatchPageContent({ id }: { id: string }) {
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
     // This is the crucial 3-stage logic.
-    // 1. If loading, show skeleton.
-    if (isLoading) {
+    // 1. If firestore isn't ready or useDoc is loading, show skeleton.
+    if (isLoading || !firestore) {
         return <WatchPageSkeleton />;
     }
     
-    // 2. If NOT loading AND video is null, then it's a real 404.
-    if (!isLoading && !video) {
+    // 2. If, after loading, the video is still null, then it's a real 404.
+    if (!video) {
         notFound();
     }
     
-    // 3. If we reach here, it means we are not loading and we have a video.
-    // We can safely render the content.
+    // 3. If we reach here, it means we have a video.
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
@@ -189,7 +188,7 @@ function WatchPageContent({ id }: { id: string }) {
 }
 
 export default function WatchPage({ params }: { params: { id: string } }) {
-  const { id } = React.use(params);
+  const id = React.use(params);
   return (
     <Suspense fallback={<WatchPageSkeleton />}>
       <WatchPageContent id={id} />
