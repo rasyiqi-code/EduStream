@@ -64,24 +64,40 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
             .filter((v): v is Video => !!v);
     }, [videos, playlist.videoIds]);
 
-    const firstVideoId = orderedVideos[0]?.id;
+    const firstVideo = orderedVideos[0];
+    const firstVideoId = firstVideo?.id;
+    const heroThumbnail = firstVideo?.thumbnailUrl || "https://picsum.photos/seed/playlist-hero/1280/720";
 
     return (
         <div>
-            {/* Hero Section */}
-            <section className="mb-10 p-6 bg-card rounded-xl border">
-                <h1 className="text-4xl font-bold tracking-tight mb-3">{playlist.name}</h1>
-                <p className="text-muted-foreground mb-4 max-w-3xl">{playlist.description}</p>
-                <p className="text-sm text-muted-foreground mb-6">{orderedVideos.length} video dalam kursus ini</p>
-                {firstVideoId && (
-                     <Button asChild size="lg">
-                        <Link href={`/watch/${firstVideoId}`}>
-                           <PlayCircle className="mr-2 h-5 w-5" /> Mulai Kursus
-                        </Link>
-                    </Button>
-                )}
+             <section className="relative mb-10 overflow-hidden rounded-xl border bg-card text-card-foreground">
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/50 to-transparent" />
+                <div className="relative grid md:grid-cols-2 gap-6 md:gap-10 items-end p-6 md:p-8">
+                    <div className="order-2 md:order-1">
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tighter mb-3">{playlist.name}</h1>
+                        <p className="text-muted-foreground mb-4 max-w-xl">{playlist.description}</p>
+                        <p className="text-sm text-muted-foreground mb-6">{orderedVideos.length} video dalam kursus ini</p>
+                        {firstVideoId && (
+                            <Button asChild size="lg">
+                                <Link href={`/watch/${firstVideoId}`}>
+                                <PlayCircle className="mr-2 h-5 w-5" /> Mulai Kursus
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
+                     <div className="order-1 md:order-2 aspect-video overflow-hidden rounded-lg shadow-lg">
+                        <Image
+                            src={heroThumbnail}
+                            alt={playlist.name}
+                            width={1280}
+                            height={720}
+                            className="w-full h-full object-cover"
+                            data-ai-hint="course cover"
+                        />
+                    </div>
+                </div>
             </section>
-
+            
             {/* Video List */}
             <section>
                  <h2 className="text-2xl font-bold mb-6">Daftar Isi Kursus</h2>
