@@ -31,14 +31,14 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
           config={{
             youtube: {
               playerVars: {
-                // Hide all YouTube's native UI elements
+                // Hide all YouTube's native UI elements, including title, buttons, and controls
                 controls: 0, 
-                // Hide title, uploader info - deprecated but included for robustness
+                // Deprecated but included for robustness to hide title/info
                 showinfo: 0, 
-                 // Hide the YouTube logo (partially effective)
-                modestbranding: 1,
                 // Do not show related videos when playback ends
-                rel: 0
+                rel: 0,
+                // Deprecated but included to attempt to reduce YouTube branding
+                modestbranding: 1
               }
             }
           }}
