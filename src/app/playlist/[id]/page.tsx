@@ -120,7 +120,7 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                  ) : orderedVideos.length > 0 ? (
                     <div className="space-y-4">
                         {orderedVideos.map((video, index) => (
-                             <Card key={video.id} className="hover:bg-accent/50 transition-colors">
+                             <Card key={video.id} className="hover:bg-accent/50 transition-colors border-0">
                                 <CardContent className="p-3">
                                   <div className="flex items-center gap-3 md:gap-4">
                                       <span className="hidden md:block text-lg font-bold text-muted-foreground w-6 text-center">{index + 1}</span>
