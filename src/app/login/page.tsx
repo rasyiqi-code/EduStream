@@ -4,13 +4,15 @@ import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { doc, getDoc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { demoVideos, demoPlaylists } from '@/lib/seed-data';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const SEEDING_FLAG = 'firestore_seeded_v2';
 
@@ -34,7 +36,7 @@ export default function LoginPage() {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
+        await signInWithPopup(auth, provider);
         // After successful sign-in, the useEffect will handle the rest.
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user') {
@@ -55,7 +57,14 @@ export default function LoginPage() {
 
       console.log("Checking if database needs seeding...");
       const videosCollection = collection(firestore, 'videos');
-      const videosSnapshot = await getDocs(videosCollection);
+      
+      const videosSnapshot = await getDocs(videosCollection).catch(err => {
+        const contextualError = new FirestorePermissionError({ operation: 'list', path: 'videos' });
+        errorEmitter.emit('permission-error', contextualError);
+        return null;
+      });
+
+      if (!videosSnapshot) return; // Error was thrown and handled
 
       if (!videosSnapshot.empty) {
         console.log("Database already contains data. Seeding skipped.");
@@ -68,7 +77,7 @@ export default function LoginPage() {
 
       demoVideos.forEach((video) => {
         const videoRef = doc(firestore, 'videos', video.id);
-        const videoData = { ...video, uploadDate: serverTimestamp(), authorRole: 'instructor' };
+        const videoData = { ...video, uploadDate: serverTimestamp(), authorId: 'system', authorRole: 'admin' };
         delete (videoData as any).id;
         batch.set(videoRef, videoData);
       });
@@ -80,18 +89,19 @@ export default function LoginPage() {
         batch.set(playlistRef, playlistData);
       });
 
-      try {
-        await batch.commit();
+      batch.commit().then(() => {
         console.log("Demo data successfully seeded to Firestore.");
         localStorage.setItem(SEEDING_FLAG, 'true');
-      } catch (error) {
-        console.error("Error seeding database:", error);
-         toast({
+      }).catch(err => {
+        const contextualError = new FirestorePermissionError({ operation: 'write', path: '[batch]' });
+        errorEmitter.emit('permission-error', contextualError);
+        toast({
             variant: "destructive",
             title: "Database Seeding Failed",
-            description: "Could not add demo data. Check console for errors.",
+            description: "Could not add demo data.",
         });
-      }
+      });
+
     }, [firestore, toast]);
 
 
@@ -99,16 +109,26 @@ export default function LoginPage() {
     if (!firestore || !user) return;
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
+    const userDoc = await getDoc(userDocRef).catch(err => {
+      const contextualError = new FirestorePermissionError({ operation: 'get', path: userDocRef.path });
+      errorEmitter.emit('permission-error', contextualError);
+      return null;
+    });
+
+    if (!userDoc) return; // Error was thrown and handled
 
     if (userDoc.exists()) {
-        // User already has a profile, no need to set role again.
-        return;
+        return; // User profile already exists
     }
 
-    // New user, determine role
     const usersCollectionRef = collection(firestore, 'users');
-    const existingUsers = await getDocs(usersCollectionRef);
+    const existingUsers = await getDocs(usersCollectionRef).catch(err => {
+        const contextualError = new FirestorePermissionError({ operation: 'list', path: 'users' });
+        errorEmitter.emit('permission-error', contextualError);
+        return null;
+    });
+
+    if (!existingUsers) return; // Error was thrown and handled
 
     const userProfile: UserProfile = {
       uid: user.uid,
@@ -118,13 +138,12 @@ export default function LoginPage() {
       role: existingUsers.empty ? 'admin' : 'student',
     };
     
-    // The FirestorePermissionError will be emitted by this non-blocking function
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+
   }, [firestore]);
 
 
   useEffect(() => {
-    // When user object is available after sign-in, update profile, seed DB, and redirect.
     if (user && firestore) {
       updateUserProfile(user).then(() => {
         seedDatabase().then(() => {
@@ -165,7 +184,7 @@ export default function LoginPage() {
           <CardDescription>Sign in to continue to your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="outline" className="w-full" onClick={handleSignIn} disabled={isUserLoading}>
+          <Button variant="outline" className="w-full" onClick={handleSignIn}>
             <GoogleIcon />
             Sign in with Google
           </Button>
