@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListVideo, Film, Cog } from "lucide-react";
-import { collection } from 'firebase/firestore';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import type { Playlist } from '@/lib/types';
+import { ListVideo, Film, Cog, Home } from "lucide-react";
+import { collection, doc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import type { Playlist, UserProfile } from '@/lib/types';
 import {
   Sidebar,
   SidebarHeader,
@@ -20,7 +20,6 @@ import {
   SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { useUser } from "@/firebase";
 
 function PlaylistItems() {
     const pathname = usePathname();
@@ -66,6 +65,15 @@ function PlaylistItems() {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  const isAdmin = userProfile?.role === 'admin';
 
   return (
     <Sidebar collapsible="icon">
@@ -77,15 +85,31 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="pt-4 md:pt-0">
+         <SidebarGroup>
+          <SidebarMenu>
+             <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === `/`}
+                  tooltip="Dashboard"
+                >
+                  <Link href="/">
+                    <Home />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Playlists</SidebarGroupLabel>
+          <SidebarGroupLabel>Courses</SidebarGroupLabel>
           <SidebarMenu>
             <PlaylistItems />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
-      {user && (
+      {isAdmin && (
         <>
           <SidebarSeparator />
           <SidebarFooter>

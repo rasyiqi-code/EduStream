@@ -11,10 +11,12 @@ import { Input } from "@/components/ui/input";
 import { AddVideoDialog } from "@/components/add-video-dialog";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Skeleton } from "./ui/skeleton";
-import { useAuth, useUser } from "@/firebase";
+import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { doc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { signOut } from "firebase/auth";
+import type { UserProfile } from "@/lib/types";
 
 function SearchBar() {
   const router = useRouter();
@@ -25,6 +27,7 @@ function SearchBar() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const searchQuery = formData.get("search") as string;
+    // Always route to homepage for search results
     router.push(`/?search=${searchQuery}`);
   };
 

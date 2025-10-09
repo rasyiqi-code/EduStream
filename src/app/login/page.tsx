@@ -2,9 +2,9 @@
 
 import { useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
+import { doc, getDoc, getDocs, collection, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film } from 'lucide-react';
@@ -12,10 +12,7 @@ import type { UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { demoVideos, demoPlaylists } from '@/lib/seed-data';
 
-
-// A simple flag in localStorage to ensure we only seed once per client.
 const SEEDING_FLAG = 'firestore_seeded_v2';
-
 
 function GoogleIcon() {
   return (
@@ -36,11 +33,19 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     if (!auth) return;
     const provider = new GoogleAuthProvider();
-    // Do not wrap signInWithPopup in a try/catch or chain a .catch().
-    // The onAuthStateChanged listener handles success, and specific errors
-    // like 'popup-closed-by-user' don't need to be toast messages.
-    // Any subsequent Firestore permission errors will now be caught by the global handler.
-    signInWithPopup(auth, provider);
+    try {
+        const result = await signInWithPopup(auth, provider);
+        // After successful sign-in, the useEffect will handle the rest.
+    } catch (error: any) {
+        if (error.code !== 'auth/popup-closed-by-user') {
+            console.error("Sign-in error:", error);
+            toast({
+                variant: "destructive",
+                title: "Sign-in Failed",
+                description: error.message || "An unexpected error occurred during sign-in.",
+            });
+        }
+    }
   };
   
   const seedDatabase = useCallback(async () => {
@@ -70,7 +75,9 @@ export default function LoginPage() {
 
       demoPlaylists.forEach((playlist) => {
         const playlistRef = doc(firestore, 'playlists', playlist.id);
-        batch.set(playlistRef, playlist);
+        const playlistData = { ...playlist };
+        delete (playlistData as any).id;
+        batch.set(playlistRef, playlistData);
       });
 
       try {
@@ -88,17 +95,29 @@ export default function LoginPage() {
     }, [firestore, toast]);
 
 
-  const updateUserProfile = useCallback((user: any) => {
+  const updateUserProfile = useCallback(async (user: User) => {
     if (!firestore || !user) return;
+
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+        // User already has a profile, no need to set role again.
+        return;
+    }
+
+    // New user, determine role
+    const usersCollectionRef = collection(firestore, 'users');
+    const existingUsers = await getDocs(usersCollectionRef);
 
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
+      role: existingUsers.empty ? 'admin' : 'student',
     };
     
-    const userDocRef = doc(firestore, 'users', user.uid);
     // The FirestorePermissionError will be emitted by this non-blocking function
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
   }, [firestore]);
@@ -107,9 +126,10 @@ export default function LoginPage() {
   useEffect(() => {
     // When user object is available after sign-in, update profile, seed DB, and redirect.
     if (user && firestore) {
-      updateUserProfile(user);
-      seedDatabase().then(() => {
-          router.push('/');
+      updateUserProfile(user).then(() => {
+        seedDatabase().then(() => {
+            router.push('/');
+        });
       });
     }
   }, [user, firestore, router, updateUserProfile, seedDatabase]);
@@ -124,7 +144,6 @@ export default function LoginPage() {
     );
   }
   
-  // If user is somehow already logged in but hasn't been redirected yet, show loading.
   if (user) {
       return (
         <div className="flex items-center justify-center min-h-screen">

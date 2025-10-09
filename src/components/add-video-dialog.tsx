@@ -32,7 +32,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser } from "@/firebase";
 import { collection, serverTimestamp, addDoc } from "firebase/firestore";
-import type { Video } from "@/lib/types";
+import type { Video, UserProfile } from "@/lib/types";
+import { useDoc } from "@/firebase/firestore/use-doc";
+import { doc } from "firebase/firestore";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -52,6 +54,12 @@ export function AddVideoDialog() {
   const { user } = useUser();
   const router = useRouter();
 
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -69,7 +77,7 @@ export function AddVideoDialog() {
   }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!firestore || !user) {
+    if (!firestore || !user || !userProfile) {
         toast({
             variant: "destructive",
             title: "Authentication Error",
@@ -87,6 +95,7 @@ export function AddVideoDialog() {
       channel: user.displayName || "Anonymous",
       channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
       authorId: user.uid,
+      authorRole: userProfile.role,
     };
 
     if (values.videoType === 'youtube') {
@@ -118,7 +127,6 @@ export function AddVideoDialog() {
         form.reset();
         setOpen(false);
         
-        // Redirect to the new video's watch page
         router.push(`/watch/${docRef.id}`);
 
     } catch(e: any) {
@@ -131,6 +139,11 @@ export function AddVideoDialog() {
     }
 
   }
+  
+  if (!userProfile || (userProfile.role !== 'admin' && userProfile.role !== 'instructor')) {
+    return null;
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
