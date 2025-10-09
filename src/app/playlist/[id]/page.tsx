@@ -92,32 +92,43 @@ function PlaylistPageContent({ id }: { id: string }) {
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
+    // Firestore 'in' queries are limited to 30 elements.
+    const videoIds = playlist?.videoIds?.slice(0, 30);
+
     const videosQuery = useMemoFirebase(() => {
-        if (!firestore || !playlist?.videoIds || playlist.videoIds.length === 0) return null;
-        // Firestore 'in' queries are limited to 30 elements.
-        return query(collection(firestore, 'videos'), where('__name__', 'in', playlist.videoIds.slice(0, 30)));
-    }, [firestore, playlist?.videoIds]);
+        if (!firestore || !videoIds || videoIds.length === 0) return null;
+        return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
+    }, [firestore, videoIds]);
 
     const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
     
     const currentVideoId = searchParams.get('v') || playlist?.videoIds?.[0];
-
-    const currentVideo = videos?.find(v => v.id === currentVideoId);
-
-    if (isPlaylistLoading || (playlist && playlist.videoIds.length > 0 && areVideosLoading)) {
-        return <PlaylistPageSkeleton />;
+    
+    if (isPlaylistLoading) {
+      return <PlaylistPageSkeleton />;
     }
 
     if (!playlist) {
         notFound();
     }
     
+    const currentVideo = videos?.find(v => v.id === currentVideoId);
+    
+    // Order videos based on the `videoIds` array from the playlist
     const orderedVideos = playlist.videoIds.map(id => videos?.find(v => v.id === id)).filter((v): v is Video => !!v);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-                {currentVideo ? (
+                {areVideosLoading ? (
+                    <>
+                        <Skeleton className="w-full aspect-video rounded-xl" />
+                        <div className="mt-4">
+                            <Skeleton className="h-8 w-3/4" />
+                            <Skeleton className="h-20 w-full mt-2" />
+                        </div>
+                    </>
+                ) : currentVideo ? (
                     currentVideo.youtubeId ? (
                         <YouTubePlayer videoId={currentVideo.youtubeId} title={currentVideo.title} />
                     ) : currentVideo.videoUrl ? (
@@ -132,7 +143,7 @@ function PlaylistPageContent({ id }: { id: string }) {
                         <p className="text-muted-foreground">Select a video to start watching.</p>
                     </div>
                 )}
-                {currentVideo && (
+                {!areVideosLoading && currentVideo && (
                     <div className="mt-4">
                         <h1 className="text-2xl font-bold tracking-tight">{currentVideo.title}</h1>
                         <p className="text-muted-foreground mt-2">{currentVideo.description}</p>
@@ -143,9 +154,9 @@ function PlaylistPageContent({ id }: { id: string }) {
                 <Card>
                     <CardContent className="p-4">
                         <div className="flex items-start gap-4 mb-4">
-                            {orderedVideos[0] && (
+                            {orderedVideos[0] ? (
                                 <Image src={orderedVideos[0].thumbnailUrl} alt={playlist.name} width={100} height={56} className="rounded-md aspect-video object-cover" data-ai-hint="playlist thumbnail" />
-                            )}
+                            ) : areVideosLoading && <Skeleton className="w-[100px] h-[56px] rounded-md" />}
                             <div>
                                 <h2 className="text-xl font-semibold">{playlist.name}</h2>
                                 <p className="text-sm text-muted-foreground">{orderedVideos.length || 0} videos</p>
@@ -153,26 +164,39 @@ function PlaylistPageContent({ id }: { id: string }) {
                         </div>
 
                         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-                            {orderedVideos.map((video, index) => {
-                                const isActive = video.id === currentVideoId;
-                                return (
-                                    <Link 
-                                        href={`/playlist/${playlist.id}?v=${video.id}`} 
-                                        key={video.id} 
-                                        className={cn(
-                                            "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                                            isActive ? "bg-accent" : "hover:bg-accent/50"
-                                        )}
-                                    >
-                                        <span className="text-muted-foreground font-mono text-sm w-5 text-center">{isActive ? <PlayCircle className="text-primary"/> : index + 1}</span>
-                                        <Image src={video.thumbnailUrl} alt={video.title} width={120} height={68} className="rounded-md aspect-video object-cover" data-ai-hint="video thumbnail" />
-                                        <div>
-                                            <h4 className="font-semibold text-sm line-clamp-2">{video.title}</h4>
-                                            <p className="text-xs text-muted-foreground">{video.channel}</p>
+                           {areVideosLoading ? (
+                                Array.from({ length: playlist.videoIds.length || 3 }).map((_, i) => (
+                                     <div key={i} className="flex items-center gap-3 p-2">
+                                        <Skeleton className="w-5 h-5"/>
+                                        <Skeleton className="w-[120px] h-[68px] rounded-md"/>
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-full" />
+                                            <Skeleton className="h-4 w-1/2" />
                                         </div>
-                                    </Link>
-                                );
-                            })}
+                                    </div>
+                                ))
+                           ) : (
+                                orderedVideos.map((video, index) => {
+                                    const isActive = video.id === currentVideoId;
+                                    return (
+                                        <Link 
+                                            href={`/playlist/${playlist.id}?v=${video.id}`} 
+                                            key={video.id} 
+                                            className={cn(
+                                                "flex items-center gap-3 p-2 rounded-lg transition-colors",
+                                                isActive ? "bg-accent" : "hover:bg-accent/50"
+                                            )}
+                                        >
+                                            <span className="text-muted-foreground font-mono text-sm w-5 text-center">{isActive ? <PlayCircle className="text-primary"/> : index + 1}</span>
+                                            <Image src={video.thumbnailUrl} alt={video.title} width={120} height={68} className="rounded-md aspect-video object-cover" data-ai-hint="video thumbnail" />
+                                            <div>
+                                                <h4 className="font-semibold text-sm line-clamp-2">{video.title}</h4>
+                                                <p className="text-xs text-muted-foreground">{video.channel}</p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })
+                           )}
                         </div>
                     </CardContent>
                 </Card>
