@@ -140,7 +140,7 @@ export function AppHeader() {
       )}
       <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
         <Film className="h-6 w-6 text-primary" />
-        <span className="hidden md:inline-block">MA Alhuda</span>
+        <span className="hidden md:inline-block">Ajhar</span>
       </Link>
       
       {!isLoginPage && (
