@@ -172,7 +172,6 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold tracking-tight">My Playlists</h2>
             </div>
             
             {isLoading ? (
@@ -298,7 +297,6 @@ function InstructorDashboard() {
                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
                             <h3 className="text-lg font-medium text-muted-foreground">No Videos Uploaded</h3>
                             <p className="text-sm text-muted-foreground mb-4">Start by adding your first video.</p>
-                            <AddVideoDialog />
                         </div>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
