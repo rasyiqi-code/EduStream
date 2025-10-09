@@ -78,7 +78,7 @@ function PlaylistVideos({ playlist }: { playlist: Playlist & {id: string} }) {
     const videosQuery = useMemoFirebase(() => {
         if (!firestore || !videoIds || videoIds.length === 0) return null;
         return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
-    }, [firestore, videoIds]);
+    }, [firestore, JSON.stringify(videoIds)]); // Stabilize dependency
 
     const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
     
