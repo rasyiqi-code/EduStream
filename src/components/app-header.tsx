@@ -29,7 +29,7 @@ function SearchBar() {
     const formData = new FormData(event.currentTarget);
     const searchQuery = formData.get("search") as string;
     // Always route to homepage for search results
-    router.push(`/?search=${searchQuery}`);
+    router.push(`/dashboard?search=${searchQuery}`);
   };
 
   return (
@@ -54,10 +54,12 @@ function SearchBar() {
 function UserNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const router = useRouter();
 
   const handleSignOut = async () => {
     if (auth) {
       await signOut(auth);
+      router.push('/login');
     }
   };
 
@@ -113,7 +115,10 @@ export function AppHeader() {
   const { user } = useUser();
   const pathname = usePathname();
   const isWatchPage = pathname.startsWith('/watch/');
+  const isLoginPage = pathname.startsWith('/login');
   
+  const homeHref = user ? "/dashboard" : "/";
+
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
       {isWatchPage && (
@@ -133,16 +138,26 @@ export function AppHeader() {
           )}
         </>
       )}
-      <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
+      <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
         <Film className="h-6 w-6 text-primary" />
         <span className="hidden md:inline-block">EduStream</span>
       </Link>
-      <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <Suspense fallback={<SearchBarSkeleton />}>
-          <SearchBar />
-        </Suspense>
-        <UserNav />
-      </div>
+      
+      {!isLoginPage && (
+          <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+            {user && (
+                <Suspense fallback={<SearchBarSkeleton />}>
+                <SearchBar />
+                </Suspense>
+            )}
+            <div className="ml-auto">
+                <UserNav />
+            </div>
+          </div>
+      )}
+
+      {isLoginPage && <div className="ml-auto"><UserNav /></div>}
+
     </header>
   );
 }

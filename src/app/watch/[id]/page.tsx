@@ -1,12 +1,12 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
+import { useDoc, useFirestore, useMemoFirebase, useCollection, useUser } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, where, limit, Timestamp, Firestore } from 'firebase/firestore';
 import type { Video, Playlist } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -135,10 +135,18 @@ function WatchPageSkeleton() {
 export default function WatchPage() {
     const firestore = useFirestore();
     const params = useParams();
+    const router = useRouter();
+    const { user, isUserLoading } = useUser();
     const id = params.id;
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+          router.replace(`/login?redirect=/watch/${id}`);
+        }
+      }, [isUserLoading, user, router, id]);
     
     // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
-    if (!firestore || typeof id !== 'string') {
+    if (!firestore || typeof id !== 'string' || isUserLoading || !user) {
         return <WatchPageSkeleton />;
     }
 
@@ -169,15 +177,17 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <div className="lg:col-span-2">
-            {video.youtubeId ? (
-                <CustomYouTubePlayer youtubeId={video.youtubeId} />
-            ) : video.videoUrl ? (
-                <MP4Player videoUrl={video.videoUrl} />
-            ) : (
-                <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
-                    <p>Video source not available.</p>
-                </div>
-            )}
+            <div className="aspect-video w-full">
+                {video.youtubeId ? (
+                    <CustomYouTubePlayer youtubeId={video.youtubeId} />
+                ) : video.videoUrl ? (
+                    <MP4Player videoUrl={video.videoUrl} />
+                ) : (
+                    <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
+                        <p>Video source not available.</p>
+                    </div>
+                )}
+            </div>
             <div className="mt-4 space-y-4">
                 <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>
                 <div className="flex items-center gap-4">

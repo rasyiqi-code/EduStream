@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useCallback } from 'react';
@@ -141,7 +142,7 @@ export default function LoginPage() {
     if (!isUserLoading && user) {
       updateUserProfile(user);
       seedDatabase();
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [user, isUserLoading, router, updateUserProfile, seedDatabase]);
 

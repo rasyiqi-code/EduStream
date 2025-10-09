@@ -155,6 +155,7 @@ export function AppSidebar() {
 
   const isAdmin = userProfile?.role === 'admin';
   const isWatchPage = pathname.startsWith('/watch/');
+  const homeHref = user ? "/dashboard" : "/";
 
   // Only render the sidebar on the watch page
   if (!isWatchPage) {
@@ -165,14 +166,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarRail />
       <SidebarHeader className="flex md:hidden">
-        <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
+        <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
           <Film className="h-6 w-6 text-primary" />
           <span className="text-foreground">EduStream</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="pt-4 md:pt-0">
         <SidebarGroup>
-          <SidebarGroupLabel>Daftar Video</SidebarGroupLabel>
+          <SidebarGroupLabel>Daftar Isi</SidebarGroupLabel>
           <SidebarMenu>
              <WatchContextSidebar />
           </SidebarMenu>

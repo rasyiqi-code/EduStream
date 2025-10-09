@@ -1,14 +1,14 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useParams, useSearchParams } from 'next/navigation';
+import { notFound, useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlayCircle } from 'lucide-react';
-import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, where, DocumentData, Firestore } from 'firebase/firestore';
 import type { Playlist, Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -158,10 +158,18 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
 export default function PlaylistPage() {
     const firestore = useFirestore();
     const params = useParams();
+    const router = useRouter();
+    const { user, isUserLoading } = useUser();
     const id = params.id;
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+          router.replace(`/login?redirect=/playlist/${id}`);
+        }
+    }, [isUserLoading, user, router, id]);
     
     // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
-    if (!firestore || typeof id !== 'string') {
+    if (!firestore || typeof id !== 'string' || isUserLoading || !user) {
         return <PlaylistPageSkeleton />;
     }
 
