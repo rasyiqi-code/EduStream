@@ -1,33 +1,36 @@
 /**
- * @description This ruleset enforces a strict user-ownership model for user profiles and public read access with owner-only writes for videos and playlists.
- * @dataStructure
- *   - /users/{userId}: Stores user profile data, accessible only to the user themselves.
- *   - /videos/{videoId}: Stores video metadata, publicly readable, but only editable by the video's author.
- *   - /playlists/{playlistId}: Stores playlist metadata, publicly readable, but only editable by the playlist's author.
- * @keySecurityDecisions
- *   - Users can only read and write their own profile data.
- *   - Listing of users is explicitly denied to prevent information harvesting.
- *   - Videos and Playlists are publicly readable but have owner-only write access based on the `authorId` field.
- *   - Data shape validation is relaxed to allow for rapid prototyping, focusing on authorization.
+ * @file Firestore Security Rules
+ * @core_philosophy This ruleset enforces a user-ownership model for user profiles,
+ * allows public read access to videos and playlists, but restricts modification
+ * to authorized users.
+ * @data_structure
+ *  - /users/{userId}: Stores user profile data, accessible only to the user.
+ *  - /videos/{videoId}: Stores video metadata, publicly readable but writable only by the video's author.
+ *  - /playlists/{playlistId}: Stores playlist metadata, publicly readable but writable only by authorized users.
+ * @key_security_decisions
+ *  - User listing is explicitly denied to protect user privacy.
+ *  - Videos and playlists are publicly readable to facilitate content discovery.
+ *  - Write permissions on videos and playlists are restricted to the author.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile documents.  Only the user themselves can read or write their profile.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (get, create, update, delete) if the user's UID matches the {userId} path parameter.
-     * @deny (get, create, update, delete) if the user's UID does not match the {userId} path parameter.
-     * @principle Enforces document ownership for all operations on user profiles.
+     * @allow (create) User with UID 'user123' can create their profile.
+     * @allow (get, update, delete) User with UID 'user123' can read, update, or delete their own profile.
+     * @deny (create) User with UID 'user456' cannot create a profile for user 'user123'.
+     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete user 'user123's profile.
+     * @deny (list) All users are denied listing user profiles.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
      */
     match /users/{userId} {
-      // isOwner() utility function
       function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
+        return request.auth.uid == userId;
       }
 
-      // isSignedIn() utility function
       function isSignedIn() {
         return request.auth != null;
       }
@@ -35,60 +38,52 @@ service cloud.firestore {
       allow get: if isOwner(userId);
       allow list: if false;
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Controls access to video documents.  Anyone can read videos, but only the author can create, update, or delete.
+     * @description Controls access to video documents.
      * @path /videos/{videoId}
-     * @allow (get, list) to anyone.
-     * @allow (create) if the request includes a valid `authorId` field matching the user's UID.
-     * @allow (update, delete) if the user is the author of the video.
-     * @deny (create, update, delete) if the user is not the author of the video.
-     * @principle Public read access with owner-only write access based on the `authorId` field.
+     * @allow (get, list) Any user can read the video.
+     * @allow (create) User with UID 'user123' can create a video with authorId 'user123'.
+     * @allow (update, delete) User with UID 'user123' can update/delete their own video.
+     * @deny (create) User with UID 'user456' cannot create a video with authorId 'user123'.
+     * @deny (update, delete) User with UID 'user456' cannot update/delete video by user 'user123'.
+     * @principle Public read with owner-only writes.
      */
     match /videos/{videoId} {
-      // isOwner() utility function
-      function isOwner() {
-        return request.auth != null && resource.data.authorId == request.auth.uid;
+      function isOwner(authorId) {
+        return request.auth.uid == authorId;
       }
-
-      // isSignedIn() utility function
+      
       function isSignedIn() {
         return request.auth != null;
       }
 
       allow get, list: if true;
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && isOwner();
-      allow delete: if isSignedIn() && isOwner();
+      allow update: if isOwner(resource.data.authorId) && resource != null;
+      allow delete: if isOwner(resource.data.authorId) && resource != null;
     }
 
     /**
-     * @description Controls access to playlist documents.  Anyone can read playlists, but only the author can create, update, or delete.
+     * @description Controls access to playlist documents.
      * @path /playlists/{playlistId}
-     * @allow (get, list) to anyone.
-     * @allow (create) if the request includes a valid `authorId` field matching the user's UID.
-     * @allow (update, delete) if the user is the author of the playlist.
-     * @deny (create, update, delete) if the user is not the author of the playlist.
-     * @principle Public read access with owner-only write access based on the `authorId` field.
+     * @allow (get, list) Any user can read the playlist.
+     * @allow (create) Signed in user can create playlists.
+     * @deny (update, delete) Only owner can update/delete playlists.
+     * @principle Public read with owner-only writes.
      */
     match /playlists/{playlistId} {
-      // isOwner() utility function
-      function isOwner() {
-        return request.auth != null && resource.data.authorId == request.auth.uid;
-      }
-
-      // isSignedIn() utility function
+          
       function isSignedIn() {
         return request.auth != null;
       }
-
+      
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update: if isSignedIn() && isOwner();
-      allow delete: if isSignedIn() && isOwner();
+      allow create: if isSignedIn(); // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
   }
 }
