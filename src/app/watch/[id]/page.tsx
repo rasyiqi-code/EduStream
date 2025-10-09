@@ -129,31 +129,21 @@ export default function WatchPage() {
     const firestore = useFirestore();
     const params = useParams();
     const id = params.id as string;
-
-    // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
-    // This prevents race conditions where hooks are called with undefined values.
-    if (!firestore || typeof id !== 'string') {
-        return <WatchPageSkeleton />;
-    }
-
-    return <WatchPageContent id={id} firestore={firestore} />;
-}
-
-
-function WatchPageContent({ id, firestore }: { id: string, firestore: any }) {
+    
     const videoRef = useMemoFirebase(() => {
-        // By the time this component renders, 'id' is guaranteed to be a string.
+        // This check is now safe because the component will re-render when id is available
+        if (!firestore || typeof id !== 'string') return null;
         return doc(firestore, 'videos', id);
     }, [firestore, id]);
     
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
-    // Show skeleton while loading.
-    if (isLoading) {
+    // Primary loading state: either the hook is loading or we are waiting for the ref.
+    if (isLoading || !videoRef) {
         return <WatchPageSkeleton />;
     }
     
-    // ONLY call notFound if loading is complete and the document is confirmed not to exist.
+    // Not found state: loading is finished, we had a valid ref, but no data came back.
     if (!video) {
         notFound();
         return null;
