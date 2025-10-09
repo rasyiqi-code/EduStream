@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListVideo, Film } from "lucide-react";
+import { ListVideo, Film, Cog } from "lucide-react";
 import { collection } from 'firebase/firestore';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import type { Playlist } from '@/lib/types';
@@ -17,7 +17,10 @@ import {
   SidebarGroupLabel,
   SidebarRail,
   SidebarMenuSkeleton,
+  SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
+import { useUser } from "@/firebase";
 
 function PlaylistItems() {
     const pathname = usePathname();
@@ -61,6 +64,8 @@ function PlaylistItems() {
 }
 
 export function AppSidebar() {
+  const pathname = usePathname();
+  const { user } = useUser();
 
   return (
     <Sidebar collapsible="icon">
@@ -79,6 +84,28 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+
+      {user && (
+        <>
+          <SidebarSeparator />
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith(`/playlists`)}
+                  tooltip="Kelola Playlist"
+                >
+                  <Link href="/playlists">
+                    <Cog />
+                    <span>Kelola Playlist</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+        </>
+      )}
     </Sidebar>
   );
 }
