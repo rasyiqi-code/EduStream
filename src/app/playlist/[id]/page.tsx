@@ -106,10 +106,10 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                         {orderedVideos.map((video, index) => (
                              <Card key={video.id} className="hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-3">
-                                  <div className="grid grid-cols-[auto_1fr] md:flex items-start md:items-center gap-3 md:gap-4">
+                                  <div className="grid grid-cols-[auto_1fr] md:flex items-start md:items-start gap-3 md:gap-4">
                                       <span className="text-lg md:text-xl font-bold text-muted-foreground w-6 text-center pt-1 md:pt-0">{index + 1}</span>
                                       
-                                      <div className="grid grid-cols-[80px_1fr] md:flex items-start md:items-center gap-3 flex-1">
+                                      <div className="grid grid-cols-[80px_1fr] md:flex items-start md:items-start gap-3 flex-1">
                                         <Image 
                                             src={video.thumbnailUrl} 
                                             alt={video.title} 
