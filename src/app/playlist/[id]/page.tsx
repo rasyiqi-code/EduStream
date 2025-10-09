@@ -106,37 +106,25 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                         {orderedVideos.map((video, index) => (
                              <Card key={video.id} className="hover:bg-accent/50 transition-colors">
                                 <CardContent className="p-3">
-                                  <div className="grid grid-cols-[auto_1fr] md:flex items-start md:items-start gap-3 md:gap-4">
-                                      <span className="text-lg md:text-xl font-bold text-muted-foreground w-6 text-center pt-1 md:pt-0">{index + 1}</span>
-                                      
-                                      <div className="grid grid-cols-[80px_1fr] md:flex items-start md:items-start gap-3 flex-1">
-                                        <Image 
-                                            src={video.thumbnailUrl} 
-                                            alt={video.title} 
-                                            width={128} 
-                                            height={72} 
-                                            className="w-[80px] md:w-32 rounded-md aspect-video object-cover" 
-                                            data-ai-hint="video thumbnail"
-                                        />
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-base md:text-lg line-clamp-2 leading-snug">{video.title}</h3>
-                                            <div className="mt-2 md:hidden">
-                                                <Button asChild size="sm" variant="secondary" className="h-8">
-                                                    <Link href={`/watch/${video.id}`}>
-                                                        <PlayCircle className="mr-2 h-4 w-4"/> Putar
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        </div>
+                                  <div className="flex items-start gap-3 md:gap-4">
+                                      <span className="hidden md:block text-lg font-bold text-muted-foreground w-6 text-center pt-1">{index + 1}</span>
+                                      <Image 
+                                          src={video.thumbnailUrl} 
+                                          alt={video.title} 
+                                          width={128} 
+                                          height={72} 
+                                          className="w-28 md:w-32 rounded-md aspect-video object-cover shrink-0"
+                                          data-ai-hint="video thumbnail"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                          <h3 className="font-semibold text-sm md:text-lg line-clamp-2 leading-snug">{video.title}</h3>
                                       </div>
-
-                                      <div className="hidden md:block">
-                                        <Button asChild variant="secondary">
-                                            <Link href={`/watch/${video.id}`}>
-                                                <PlayCircle className="mr-2 h-4 w-4"/> Putar
-                                            </Link>
-                                        </Button>
-                                      </div>
+                                      <Button asChild variant="secondary" size="sm" className="h-8 md:h-10 ml-auto self-center">
+                                          <Link href={`/watch/${video.id}`}>
+                                              <PlayCircle className="mr-0 md:mr-2 h-4 w-4"/>
+                                              <span className="hidden md:inline">Putar</span>
+                                          </Link>
+                                      </Button>
                                   </div>
                                 </CardContent>
                             </Card>
