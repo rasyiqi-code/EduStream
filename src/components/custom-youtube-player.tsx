@@ -21,7 +21,7 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
   const videoUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-xl bg-black flex-1">
+    <div className="relative w-full overflow-hidden rounded-xl aspect-video bg-black">
       {hasWindow ? (
         <>
           <ReactPlayer
