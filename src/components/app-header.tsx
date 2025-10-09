@@ -141,7 +141,6 @@ export function AppHeader() {
         <Suspense fallback={<SearchBarSkeleton />}>
           <SearchBar />
         </Suspense>
-        {user && <AddVideoDialog />}
         <UserNav />
       </div>
     </header>
