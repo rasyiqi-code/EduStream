@@ -147,9 +147,7 @@ function AdminDashboard() {
     );
 }
 
-function InstructorPlaylists() {
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | undefined>(undefined);
+function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void }) {
     const firestore = useFirestore();
     const { user } = useUser();
     const { toast } = useToast();
@@ -161,16 +159,6 @@ function InstructorPlaylists() {
 
     const { data: playlists, isLoading } = useCollection<Playlist>(playlistsQuery);
     
-    const handleEdit = (playlist: Playlist) => {
-        setSelectedPlaylist(playlist);
-        setDialogOpen(true);
-    };
-
-    const handleAddNew = () => {
-        setSelectedPlaylist(undefined);
-        setDialogOpen(true);
-    };
-
     const handleDelete = async (playlistId: string) => {
         if (!firestore) return;
         const playlistDocRef = doc(firestore, 'playlists', playlistId);
@@ -185,21 +173,8 @@ function InstructorPlaylists() {
         <div>
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold tracking-tight">My Playlists</h2>
-                <div className="flex items-center gap-2">
-                    <Button onClick={handleAddNew}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create New Playlist
-                    </Button>
-                    <AddVideoDialog />
-                </div>
             </div>
-
-            <PlaylistForm
-                isOpen={dialogOpen}
-                setIsOpen={setDialogOpen}
-                playlist={selectedPlaylist}
-            />
-
+            
             {isLoading ? (
                 <PlaylistListSkeleton />
             ) : playlists && playlists.length > 0 ? (
@@ -216,7 +191,7 @@ function InstructorPlaylists() {
                                     </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleEdit(playlist)}>
+                                    <DropdownMenuItem onClick={() => onEdit(playlist)}>
                                         Edit
                                     </DropdownMenuItem>
                                     <AlertDialog>
@@ -255,10 +230,6 @@ function InstructorPlaylists() {
                 <div className="text-center py-10 border-2 border-dashed rounded-lg">
                     <h3 className="text-lg font-medium text-muted-foreground">No Playlists Created</h3>
                     <p className="text-sm text-muted-foreground mb-4">Start by creating your first playlist.</p>
-                     <Button onClick={handleAddNew}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create New Playlist
-                    </Button>
                 </div>
             )}
         </div>
@@ -269,6 +240,9 @@ function InstructorPlaylists() {
 function InstructorDashboard() {
     const { user } = useUser();
     const firestore = useFirestore();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | undefined>(undefined);
 
     const videosQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -282,11 +256,34 @@ function InstructorDashboard() {
         return allVideos.filter(video => video.authorId === user.uid);
     }, [allVideos, user]);
     
+    const handleEditPlaylist = (playlist: Playlist) => {
+        setSelectedPlaylist(playlist);
+        setDialogOpen(true);
+    };
+
+    const handleAddNewPlaylist = () => {
+        setSelectedPlaylist(undefined);
+        setDialogOpen(true);
+    };
+
     return (
         <div>
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-3xl font-bold tracking-tight">Instructor Dashboard</h1>
+                <div className="flex items-center gap-2">
+                     <Button onClick={handleAddNewPlaylist}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Create New Playlist
+                    </Button>
+                    <AddVideoDialog />
+                </div>
             </div>
+
+            <PlaylistForm
+                isOpen={dialogOpen}
+                setIsOpen={setDialogOpen}
+                playlist={selectedPlaylist}
+            />
 
             <Tabs defaultValue="videos">
                 <div className="flex items-center justify-between">
@@ -311,7 +308,7 @@ function InstructorDashboard() {
                     </div>
                 </TabsContent>
                 <TabsContent value="playlists" className="mt-6">
-                   <InstructorPlaylists />
+                   <InstructorPlaylists onEdit={handleEditPlaylist} />
                 </TabsContent>
             </Tabs>
         </div>
