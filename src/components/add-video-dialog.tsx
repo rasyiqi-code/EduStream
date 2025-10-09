@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser, useMemoFirebase } from "@/firebase";
+import { useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { collection, serverTimestamp, addDoc } from "firebase/firestore";
 import type { Video, UserProfile } from "@/lib/types";
 import { useDoc } from "@/firebase/firestore/use-doc";
@@ -116,29 +116,23 @@ export function AddVideoDialog() {
       videoData.videoUrl = values.url;
     }
     
-    try {
-        const videosCollection = collection(firestore, 'videos');
-        const docRef = await addDoc(videosCollection, videoData);
-        
-        toast({
-          title: "Video Added!",
-          description: `${values.title} has been successfully added.`,
-        });
-        
-        form.reset();
-        setOpen(false);
-        
-        router.push(`/watch/${docRef.id}`);
+    const videosCollection = collection(firestore, 'videos');
+    const docRefPromise = addDocumentNonBlocking(videosCollection, videoData);
 
-    } catch(e: any) {
-        console.error("Error adding video: ", e);
-        toast({
-            variant: "destructive",
-            title: "Error adding video",
-            description: "Could not add video. See console for details.",
-        });
-    }
+    toast({
+      title: "Video Added!",
+      description: `${values.title} has been successfully added.`,
+    });
 
+    form.reset();
+    setOpen(false);
+
+    // We can still wait for the ref to redirect
+    docRefPromise.then(docRef => {
+        if(docRef) {
+            router.push(`/watch/${docRef.id}`);
+        }
+    });
   }
   
   if (!userProfile || (userProfile.role !== 'admin' && userProfile.role !== 'instructor')) {

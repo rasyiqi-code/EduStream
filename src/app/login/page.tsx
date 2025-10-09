@@ -37,11 +37,8 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      if (result.user && firestore) {
-        await updateUserProfile(result.user);
-        await seedDatabase();
-        router.push('/');
-      }
+      // The rest of the logic is handled by the useEffect hook
+      // which monitors the `user` state.
     } catch (error: any) {
       if (error.code !== 'auth/popup-closed-by-user') {
           console.error("Sign-in error:", error);
@@ -62,7 +59,7 @@ export default function LoginPage() {
       console.log("Checking if database needs seeding...");
       const videosCollection = collection(firestore, 'videos');
       
-      const videosSnapshot = await getDocs(videosCollection).catch(err => {
+      const videosSnapshot = await getDocs(query(videosCollection, limit(1))).catch(err => {
         const contextualError = new FirestorePermissionError({ operation: 'list', path: 'videos' });
         errorEmitter.emit('permission-error', contextualError);
         return null;
@@ -96,17 +93,12 @@ export default function LoginPage() {
       batch.commit().catch(err => {
         const contextualError = new FirestorePermissionError({ operation: 'write', path: '[batch]' });
         errorEmitter.emit('permission-error', contextualError);
-        toast({
-            variant: "destructive",
-            title: "Database Seeding Failed",
-            description: "Could not add demo data.",
-        });
       });
       
       console.log("Demo data successfully seeded to Firestore.");
       localStorage.setItem(SEEDING_FLAG, 'true');
 
-    }, [firestore, toast]);
+    }, [firestore]);
 
 
   const updateUserProfile = useCallback(async (user: User) => {
@@ -120,7 +112,9 @@ export default function LoginPage() {
         return null;
     });
 
-    if (userDocSnap?.exists()) {
+    if (!userDocSnap) return; // Error was handled by the catch block
+
+    if (userDocSnap.exists()) {
         // User profile already exists, do nothing.
         return;
     }
@@ -145,28 +139,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isUserLoading && user) {
+      updateUserProfile(user);
+      seedDatabase();
       router.push('/');
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, updateUserProfile, seedDatabase]);
 
-  if (isUserLoading) {
+  if (isUserLoading || user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p>Loading...</p>
+          <p>Setting up your account and redirecting...</p>
         </div>
       </div>
     );
-  }
-  
-  if (user) {
-       return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-                <p>Setting up your account and redirecting...</p>
-            </div>
-        </div>
-      )
   }
 
   return (

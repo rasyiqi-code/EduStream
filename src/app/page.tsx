@@ -10,6 +10,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Film, ListVideo, Users } from 'lucide-react';
 import { AddVideoDialog } from '@/components/add-video-dialog';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 function VideoGridSkeleton() {
   return (
@@ -59,10 +62,23 @@ function AdminDashboard() {
                 const playlistsCol = collection(firestore, 'playlists');
                 const usersCol = collection(firestore, 'users');
 
+                const videosPromise = getCountFromServer(videosCol).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'videos' }));
+                    return { data: () => ({ count: 0 }) };
+                });
+                const playlistsPromise = getCountFromServer(playlistsCol).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'playlists' }));
+                    return { data: () => ({ count: 0 }) };
+                });
+                const usersPromise = getCountFromServer(usersCol).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'users' }));
+                    return { data: () => ({ count: 0 }) };
+                });
+
                 const [videosSnap, playlistsSnap, usersSnap] = await Promise.all([
-                    getCountFromServer(videosCol),
-                    getCountFromServer(playlistsCol),
-                    getCountFromServer(usersCol),
+                    videosPromise,
+                    playlistsPromise,
+                    usersPromise,
                 ]);
 
                 setCounts({
@@ -71,6 +87,8 @@ function AdminDashboard() {
                     users: usersSnap.data().count,
                 });
             } catch (error) {
+                // This catch block might be redundant if individual promises handle their errors,
+                // but it's a good safeguard.
                 console.error("Error fetching admin stats:", error);
             } finally {
                 setIsLoading(false);

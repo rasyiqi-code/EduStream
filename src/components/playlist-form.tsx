@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Playlist } from '@/lib/types';
@@ -78,39 +78,32 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
       return;
     }
 
-    try {
-      if (isEditing) {
+    if (isEditing && playlist) {
         // Update playlist
         const playlistRef = doc(firestore, 'playlists', playlist.id);
-        await updateDoc(playlistRef, {
+        const updatedData = {
           name: values.name,
           description: values.description || '',
-        });
+        };
+        updateDocumentNonBlocking(playlistRef, updatedData);
         toast({
-          title: 'Playlist Diperbarui',
-          description: 'Perubahan Anda telah disimpan.',
+            title: 'Playlist Diperbarui',
+            description: 'Perubahan Anda telah disimpan.',
         });
-      } else {
+    } else {
         // Create new playlist
-        await addDoc(collection(firestore, 'playlists'), {
+        const newPlaylistData = {
           ...values,
+          description: values.description || '',
           videoIds: [],
-          // creationDate: serverTimestamp(), // If you want to track creation date
-        });
+        };
+        addDocumentNonBlocking(collection(firestore, 'playlists'), newPlaylistData);
         toast({
-          title: 'Playlist Dibuat',
-          description: 'Playlist baru Anda telah dibuat.',
+            title: 'Playlist Dibuat',
+            description: 'Playlist baru Anda telah dibuat.',
         });
-      }
-      setIsOpen(false);
-    } catch (error) {
-      console.error('Error saving playlist:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Gagal Menyimpan',
-        description: 'Terjadi kesalahan saat menyimpan playlist.',
-      });
     }
+    setIsOpen(false);
   };
 
   return (

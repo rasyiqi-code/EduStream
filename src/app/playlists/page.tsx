@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 import type { Playlist } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -72,20 +72,15 @@ export default function PlaylistsPage() {
 
   const handleDelete = async (playlistId: string) => {
     if (!firestore) return;
-    try {
-      await deleteDoc(doc(firestore, 'playlists', playlistId));
-      toast({
+    const playlistDocRef = doc(firestore, 'playlists', playlistId);
+    
+    // Using non-blocking delete. Error is handled globally.
+    deleteDocumentNonBlocking(playlistDocRef);
+
+    toast({
         title: "Playlist Dihapus",
         description: "Playlist telah berhasil dihapus.",
-      });
-    } catch (error) {
-      console.error("Error deleting playlist: ", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Gagal menghapus playlist.",
-      });
-    }
+    });
   };
 
   return (
