@@ -94,7 +94,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
 
 function AdminDashboard() {
     const firestore = useFirestore();
-    const [counts, setCounts] = React.useState({ videos: 0, playlists: 0, users: 0 });
+    const [counts, setCounts] = React.useState({ videos: 0, playlists: 0 });
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -104,7 +104,6 @@ function AdminDashboard() {
             try {
                 const videosCol = collection(firestore, 'videos');
                 const playlistsCol = collection(firestore, 'playlists');
-                const usersCol = collection(firestore, 'users');
 
                 const videosPromise = getCountFromServer(videosCol).catch(err => {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'videos' }));
@@ -114,21 +113,15 @@ function AdminDashboard() {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'playlists' }));
                     return { data: () => ({ count: 0 }) };
                 });
-                const usersPromise = getCountFromServer(usersCol).catch(err => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'users' }));
-                    return { data: () => ({ count: 0 }) };
-                });
                 
-                const [videosSnap, playlistsSnap, usersSnap] = await Promise.all([
+                const [videosSnap, playlistsSnap] = await Promise.all([
                     videosPromise,
                     playlistsPromise,
-                    usersPromise,
                 ]);
 
                 setCounts({
                     videos: videosSnap.data().count,
                     playlists: playlistsSnap.data().count,
-                    users: usersSnap.data().count,
                 });
             } catch (error) {
                 console.error("Error fetching admin stats:", error);
@@ -142,10 +135,9 @@ function AdminDashboard() {
     return (
         <div>
             <h1 className="text-3xl font-bold tracking-tight mb-6">Admin Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
                 <StatCard title="Total Videos" value={counts.videos} icon={Film} isLoading={isLoading} />
                 <StatCard title="Total Playlists" value={counts.playlists} icon={ListVideo} isLoading={isLoading} />
-                <StatCard title="Total Users" value={counts.users} icon={Users} isLoading={isLoading} />
             </div>
              <div className="mt-8">
                 <h2 className="text-2xl font-bold tracking-tight mb-4">All Videos</h2>
