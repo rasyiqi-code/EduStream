@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -22,6 +23,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import { useMemo } from "react";
 
 function PlaylistItems() {
     const pathname = usePathname();
@@ -75,16 +77,16 @@ function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, acti
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
-    const videoIds = playlist?.videoIds || [];
+    const videoIds = useMemo(() => playlist?.videoIds?.slice(0, 30) || [], [playlist?.videoIds]);
+
     const videosQuery = useMemoFirebase(() => {
         if (!firestore || videoIds.length === 0) return null;
-        // Firestore 'in' queries are limited to 30 elements.
-        return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds.slice(0, 30)));
+        return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
     }, [firestore, JSON.stringify(videoIds)]);
 
     const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
 
-    const orderedVideos = useMemoFirebase(() => {
+    const orderedVideos = useMemo(() => {
         if (!videos || !playlist?.videoIds) return [];
         const videoMap = new Map(videos.map(v => [v.id, v]));
         return playlist.videoIds.map(id => videoMap.get(id)).filter((v): v is Video => !!v);
@@ -142,7 +144,7 @@ function WatchContextSidebar() {
         return <WatchPlaylist playlistId={firstPlaylistId} activeVideoId={videoId} />;
     }
 
-    // Fallback if video is not in a playlist
+    // Fallback if video is not in a playlist to show all courses
     return <PlaylistItems />;
 }
 
