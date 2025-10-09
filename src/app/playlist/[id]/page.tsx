@@ -135,10 +135,9 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
                                       <div className="flex-1 min-w-0 flex items-center h-full">
                                           <h3 className="font-semibold text-sm md:text-lg line-clamp-2 leading-snug">{video.title}</h3>
                                       </div>
-                                      <Button asChild variant="secondary" size="sm" className="h-8 md:h-10 ml-auto self-center">
+                                      <Button asChild variant="secondary" size="icon" className="ml-auto self-center shrink-0">
                                           <Link href={`/watch/${video.id}`}>
-                                              <PlayCircle className="mr-0 md:mr-2 h-4 w-4"/>
-                                              <span className="hidden md:inline">Putar</span>
+                                              <PlayCircle className="h-5 w-5"/>
                                           </Link>
                                       </Button>
                                   </div>
