@@ -110,7 +110,7 @@ export default function LandingPage() {
               </div>
               <div className="group relative mx-auto aspect-video overflow-hidden rounded-xl sm:w-full lg:order-last">
                 <Image
-                  src="https://picsum.photos/seed/elearning/600/400"
+                  src="https://picsum.photos/seed/education/600/400"
                   width="600"
                   height="400"
                   alt="Hero"
