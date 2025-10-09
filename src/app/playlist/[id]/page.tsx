@@ -1,9 +1,9 @@
 "use client";
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlayCircle } from 'lucide-react';
@@ -80,9 +80,9 @@ function PlaylistPageSkeleton() {
     )
 }
 
-function PlaylistVideos({ playlist, id }: { playlist: Playlist, id: string }) {
+function PlaylistVideos({ playlist }: { playlist: Playlist }) {
     const firestore = useFirestore();
-    const searchParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+    const searchParams = useSearchParams();
     const currentVideoIdParam = searchParams.get('v');
 
     // Firestore 'in' queries are limited to 30 elements.
@@ -99,7 +99,9 @@ function PlaylistVideos({ playlist, id }: { playlist: Playlist, id: string }) {
     const currentVideo = videos?.find(v => v.id === currentVideoId);
     
     // Order videos based on the `videoIds` array from the playlist
-    const orderedVideos = playlist.videoIds.map(id => videos?.find(v => v.id === id)).filter((v): v is Video => !!v);
+    const orderedVideos = playlist.videoIds
+      .map(id => videos?.find(v => v.id === id))
+      .filter((v): v is Video => !!v);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -140,7 +142,7 @@ function PlaylistVideos({ playlist, id }: { playlist: Playlist, id: string }) {
                         <div className="flex items-start gap-4 mb-4">
                             {orderedVideos[0] ? (
                                 <Image src={orderedVideos[0].thumbnailUrl} alt={playlist.name} width={100} height={56} className="rounded-md aspect-video object-cover" data-ai-hint="playlist thumbnail" />
-                            ) : areVideosLoading && <Skeleton className="w-[100px] h-[56px] rounded-md" />}
+                            ) : areVideosLoading ? <Skeleton className="w-[100px] h-[56px] rounded-md" /> : null}
                             <div>
                                 <h2 className="text-xl font-semibold">{playlist.name}</h2>
                                 <p className="text-sm text-muted-foreground">{orderedVideos.length || 0} videos</p>
@@ -189,36 +191,25 @@ function PlaylistVideos({ playlist, id }: { playlist: Playlist, id: string }) {
     )
 }
 
-
-function PlaylistPageContent({ id }: { id: string }) {
+export default function PlaylistPage() {
     const firestore = useFirestore();
+    const params = useParams();
+    const id = params.id as string;
 
     const playlistRef = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !id) return null;
         return doc(firestore, 'playlists', id);
     }, [firestore, id]);
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
-    // 1. If firestore isn't ready or useDoc is loading, show skeleton.
-    if (isPlaylistLoading || !firestore) {
+    if (isPlaylistLoading || !firestore || !id) {
       return <PlaylistPageSkeleton />;
     }
 
-    // 2. If, after loading, the playlist is still null, then it's a real 404.
     if (!playlist) {
         notFound();
     }
     
-    // 3. If we reach here, it means we have a playlist. Now we can fetch videos.
-    return <PlaylistVideos playlist={playlist} id={id} />;
-}
-
-export default function PlaylistPage({ params }: { params: { id: string } }) {
-  const id = React.use(params);
-  return (
-    <Suspense fallback={<PlaylistPageSkeleton />}>
-      <PlaylistPageContent id={id} />
-    </Suspense>
-  );
+    return <PlaylistVideos playlist={playlist} />;
 }

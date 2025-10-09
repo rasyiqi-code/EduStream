@@ -1,11 +1,11 @@
 "use client";
 
-import React, { Suspense } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { doc, collection, query, where, limit } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -124,28 +124,26 @@ function WatchPageSkeleton() {
     );
 }
 
-function WatchPageContent({ id }: { id: string }) {
+export default function WatchPage() {
     const firestore = useFirestore();
+    const params = useParams();
+    const id = params.id as string;
 
     const videoRef = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !id) return null;
         return doc(firestore, 'videos', id);
     }, [firestore, id]);
     
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
-    // This is the crucial 3-stage logic.
-    // 1. If firestore isn't ready or useDoc is loading, show skeleton.
-    if (isLoading || !firestore) {
+    if (isLoading || !firestore || !id) {
         return <WatchPageSkeleton />;
     }
     
-    // 2. If, after loading, the video is still null, then it's a real 404.
     if (!video) {
         notFound();
     }
     
-    // 3. If we reach here, it means we have a video.
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
@@ -185,13 +183,4 @@ function WatchPageContent({ id }: { id: string }) {
           </aside>
         </div>
     );
-}
-
-export default function WatchPage({ params }: { params: { id: string } }) {
-  const id = React.use(params);
-  return (
-    <Suspense fallback={<WatchPageSkeleton />}>
-      <WatchPageContent id={id} />
-    </Suspense>
-  );
 }
