@@ -37,8 +37,6 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
-        // `useEffect` is not reliable for this flow.
-        // We will manually trigger the post-login logic.
         if (result.user && firestore) {
           await updateUserProfile(result.user);
           await seedDatabase();
@@ -70,7 +68,7 @@ export default function LoginPage() {
         return null;
       });
 
-      if (!videosSnapshot) return; // Error was thrown and handled
+      if (!videosSnapshot) return;
 
       if (!videosSnapshot.empty) {
         console.log("Database already contains data. Seeding skipped.");
@@ -115,19 +113,20 @@ export default function LoginPage() {
     if (!firestore || !user) return;
 
     const userDocRef = doc(firestore, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef).catch(err => {
-      const contextualError = new FirestorePermissionError({ operation: 'get', path: userDocRef.path });
-      errorEmitter.emit('permission-error', contextualError);
-      return null;
+    
+    // Efficiently check if user doc exists. We still need this to avoid re-calculating the role.
+    const userDocSnap = await getDoc(userDocRef).catch(err => {
+        const contextualError = new FirestorePermissionError({ operation: 'get', path: userDocRef.path });
+        errorEmitter.emit('permission-error', contextualError);
+        return null;
     });
 
-    if (!userDoc) return; 
-
-    // If user profile already exists, do nothing.
-    if (userDoc.exists()) {
-        return; 
+    if (userDocSnap?.exists()) {
+        // User profile already exists, do nothing.
+        return;
     }
 
+    // User profile does not exist, so we create it.
     // Check if this is the very first user to assign admin role.
     const usersQuery = query(collection(firestore, 'users'), limit(1));
     const existingUsersSnap = await getDocs(usersQuery).catch(err => {
@@ -136,24 +135,29 @@ export default function LoginPage() {
         return null;
     });
 
-    if (!existingUsersSnap) return;
+    if (!existingUsersSnap) {
+        // Error occurred and was handled, so we stop.
+        return;
+    }
+    
+    const role = existingUsersSnap.empty ? 'admin' : 'student';
 
     const userProfile: UserProfile = {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
       photoURL: user.photoURL,
-      // If the query for existing users comes back empty, they are the first user. Make them admin.
-      role: existingUsersSnap.empty ? 'admin' : 'student',
+      role: role,
     };
     
+    // Use set with merge to safely create the document.
+    // This will create the doc if it doesn't exist, or update if it somehow was created in a race condition.
     setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
 
   }, [firestore]);
 
 
   useEffect(() => {
-    // This effect now only redirects if a user is already logged in.
     if (!isUserLoading && user) {
       router.push('/');
     }
@@ -169,13 +173,11 @@ export default function LoginPage() {
     );
   }
   
-  // This screen should not be seen if the user is logged in.
-  // The useEffect above will redirect them.
   if (user) {
        return (
         <div className="flex items-center justify-center min-h-screen">
             <div className="text-center">
-                <p>Redirecting...</p>
+                <p>Setting up your account and redirecting...</p>
             </div>
         </div>
       )
