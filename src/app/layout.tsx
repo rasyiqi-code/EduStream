@@ -1,11 +1,12 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'EduStream',
-  description: 'An educational video platform for schools.',
+  title: 'E-Learning MA Alhuda',
+  description: 'Platform e-learning untuk siswa MA Alhuda Pangabasen.',
   icons: false,
 };
 

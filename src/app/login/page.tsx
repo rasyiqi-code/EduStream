@@ -163,13 +163,13 @@ export default function LoginPage() {
           <div className="flex justify-center items-center mb-4">
             <Film className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Welcome to EduStream</CardTitle>
-          <CardDescription>Sign in to continue to your account</CardDescription>
+          <CardTitle className="text-2xl">Selamat Datang</CardTitle>
+          <CardDescription>Login untuk melanjutkan ke E-Learning MA Alhuda</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="outline" className="w-full" onClick={handleSignIn}>
             <GoogleIcon />
-            Sign in with Google
+            Login dengan Google
           </Button>
         </CardContent>
       </Card>

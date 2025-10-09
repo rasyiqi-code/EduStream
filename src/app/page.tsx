@@ -38,10 +38,10 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Platform Video Edukasi Modern Anda
+                    Selamat Datang di Platform E-Learning MA Alhuda Pangabasen
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    EduStream menyediakan kursus video berkualitas tinggi yang dikurasi oleh para ahli untuk memberdayakan pembelajaran Anda.
+                    Akses materi pembelajaran video eksklusif yang dirancang untuk siswa MA Alhuda Pangabasen. Belajar kapan saja, di mana saja.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -56,7 +56,7 @@ export default function LandingPage() {
                 height="400"
                 alt="Hero"
                 className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-                data-ai-hint="learning online"
+                data-ai-hint="students learning"
               />
             </div>
           </div>
@@ -69,30 +69,30 @@ export default function LandingPage() {
                 <div className="inline-block rounded-lg bg-card px-3 py-1 text-sm">Fitur Utama</div>
                 <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">Belajar Lebih Cerdas, Bukan Lebih Keras</h2>
                 <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Kami menyediakan alat dan fitur yang Anda butuhkan untuk berhasil dalam perjalanan pendidikan Anda.
+                  Kami menyediakan alat dan fitur yang Anda butuhkan untuk berhasil dalam perjalanan pendidikan Anda di MA Alhuda Pangabasen.
                 </p>
               </div>
             </div>
             <div className="mx-auto grid max-w-5xl items-center gap-6 py-12 lg:grid-cols-3 lg:gap-12">
               <div className="grid gap-1 text-center">
                 <Film className="h-10 w-10 mx-auto text-primary" />
-                <h3 className="text-xl font-bold">Konten Terkurasi</h3>
+                <h3 className="text-xl font-bold">Konten Video Terkurasi</h3>
                 <p className="text-muted-foreground">
-                  Akses perpustakaan video yang dibuat oleh para instruktur ahli di berbagai bidang.
+                  Akses perpustakaan video yang dibuat oleh para guru dan instruktur ahli khusus untuk kurikulum sekolah.
                 </p>
               </div>
               <div className="grid gap-1 text-center">
                 <BookOpen className="h-10 w-10 mx-auto text-primary" />
-                <h3 className="text-xl font-bold">Playlist Terstruktur</h3>
+                <h3 className="text-xl font-bold">Jalur Belajar Terstruktur</h3>
                 <p className="text-muted-foreground">
-                  Ikuti jalur pembelajaran yang terorganisir dengan baik melalui playlist kursus kami yang mudah dinavigasi.
+                  Ikuti alur pembelajaran yang terorganisir dengan baik melalui playlist mata pelajaran yang mudah dinavigasi.
                 </p>
               </div>
               <div className="grid gap-1 text-center">
                 <ShieldCheck className="h-10 w-10 mx-auto text-primary" />
-                <h3 className="text-xl font-bold">Lingkungan Aman</h3>
+                <h3 className="text-xl font-bold">Lingkungan Belajar Aman</h3>
                 <p className="text-muted-foreground">
-                  Platform aman yang dirancang khusus untuk institusi pendidikan.
+                  Platform aman yang hanya dapat diakses oleh siswa dan staf MA Alhuda Pangabasen.
                 </p>
               </div>
             </div>

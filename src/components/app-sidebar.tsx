@@ -168,7 +168,7 @@ export function AppSidebar() {
       <SidebarHeader className="flex md:hidden">
         <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
           <Film className="h-6 w-6 text-primary" />
-          <span className="text-foreground">EduStream</span>
+          <span className="text-foreground">MA Alhuda</span>
         </Link>
       </SidebarHeader>
       <SidebarContent className="pt-4 md:pt-0">
