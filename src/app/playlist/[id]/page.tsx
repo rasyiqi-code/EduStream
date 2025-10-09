@@ -92,8 +92,27 @@ function PlaylistPageContent({ id }: { id: string }) {
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
+    // This is the crucial 3-stage logic.
+    // 1. If loading, show skeleton.
+    if (isPlaylistLoading) {
+      return <PlaylistPageSkeleton />;
+    }
+
+    // 2. If NOT loading AND playlist is null, then it's a real 404.
+    if (!isPlaylistLoading && !playlist) {
+        notFound();
+    }
+    
+    // 3. If we reach here, it means we have a playlist. Now we can fetch videos.
+    return <PlaylistVideos playlist={playlist} />;
+}
+
+function PlaylistVideos({ playlist }: { playlist: Playlist }) {
+    const firestore = useFirestore();
+    const searchParams = useSearchParams();
+    
     // Firestore 'in' queries are limited to 30 elements.
-    const videoIds = playlist?.videoIds?.slice(0, 30);
+    const videoIds = playlist.videoIds?.slice(0, 30);
 
     const videosQuery = useMemoFirebase(() => {
         if (!firestore || !videoIds || videoIds.length === 0) return null;
@@ -102,16 +121,7 @@ function PlaylistPageContent({ id }: { id: string }) {
 
     const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
     
-    const currentVideoId = searchParams.get('v') || playlist?.videoIds?.[0];
-    
-    if (isPlaylistLoading) {
-      return <PlaylistPageSkeleton />;
-    }
-
-    if (!playlist) {
-        notFound();
-    }
-    
+    const currentVideoId = searchParams.get('v') || playlist.videoIds?.[0];
     const currentVideo = videos?.find(v => v.id === currentVideoId);
     
     // Order videos based on the `videoIds` array from the playlist

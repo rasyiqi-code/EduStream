@@ -134,14 +134,19 @@ function WatchPageContent({ id }: { id: string }) {
     
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
+    // This is the crucial 3-stage logic.
+    // 1. If loading, show skeleton.
     if (isLoading) {
         return <WatchPageSkeleton />;
     }
     
-    if (!video) {
+    // 2. If NOT loading AND video is null, then it's a real 404.
+    if (!isLoading && !video) {
         notFound();
     }
-
+    
+    // 3. If we reach here, it means we are not loading and we have a video.
+    // We can safely render the content.
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
@@ -182,7 +187,6 @@ function WatchPageContent({ id }: { id: string }) {
         </div>
     );
 }
-
 
 export default function WatchPage({ params }: { params: { id: string } }) {
   const { id } = React.use(params);
