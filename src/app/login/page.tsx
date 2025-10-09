@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { demoVideos, demoPlaylists } from '@/lib/seed-data';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const SEEDING_FLAG = 'firestore_seeded_v2';
 
@@ -23,6 +24,23 @@ function GoogleIcon() {
       <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-67.7 67.7C334.6 114.6 295.2 96 248 96c-88.8 0-160.1 71.1-160.1 160s71.3 160 160.1 160c97.4 0 140.2-69.1 144.9-104.4H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path>
     </svg>
   );
+}
+
+function LoginSkeleton() {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="w-full max-w-sm">
+            <CardHeader className="text-center space-y-4">
+              <Skeleton className="h-8 w-8 mx-auto" />
+              <Skeleton className="h-7 w-48 mx-auto" />
+              <Skeleton className="h-5 w-64 mx-auto" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+    )
 }
 
 
@@ -147,18 +165,12 @@ export default function LoginPage() {
   }, [user, isUserLoading, router, updateUserProfile, seedDatabase]);
 
   if (isUserLoading || user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p>Setting up your account and redirecting...</p>
-        </div>
-      </div>
-    );
+    return <LoginSkeleton />;
   }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm animate-in fade-in-up duration-500">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
             <Film className="h-8 w-8 text-primary" />

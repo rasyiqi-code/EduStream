@@ -12,16 +12,18 @@ const AppSidebar = dynamic(() => import('@/components/app-sidebar').then(mod => 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isWatchPage = pathname.startsWith('/watch/');
+    const isLoginPage = pathname === '/login';
+    const isLandingPage = pathname === '/';
 
+    // A more robust layout that keeps the header present during navigation
     return (
         <SidebarProvider defaultOpen={true}>
-          {/* AppSidebar will conditionally render null, so it's safe to always include it */}
-          <AppSidebar />
-          <SidebarInset>
-            <AppHeader />
-            <div className="p-4 sm:p-6">
+          {isWatchPage && <AppSidebar />}
+          <SidebarInset className={!isWatchPage ? '!pl-0' : ''}>
+            {!isLoginPage && <AppHeader />}
+            <main className="p-4 sm:p-6">
               {children}
-            </div>
+            </main>
           </SidebarInset>
           <Toaster />
         </SidebarProvider>
