@@ -11,20 +11,7 @@ import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase
 import { collection, doc, query, where, DocumentData, Firestore } from 'firebase/firestore';
 import type { Playlist, Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-
-function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
-    return (
-        <div className="aspect-video w-full">
-            <iframe
-                className="w-full h-full rounded-xl"
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                title={title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-            ></iframe>
-        </div>
-    );
-}
+import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
     return (
@@ -120,7 +107,7 @@ function PlaylistVideos({ playlist }: { playlist: Playlist & {id: string} }) {
                     </>
                 ) : currentVideo ? (
                     currentVideo.youtubeId ? (
-                        <YouTubePlayer videoId={currentVideo.youtubeId} title={currentVideo.title} />
+                        <CustomYouTubePlayer youtubeId={currentVideo.youtubeId} />
                     ) : currentVideo.videoUrl ? (
                         <MP4Player videoUrl={currentVideo.videoUrl} />
                     ) : (

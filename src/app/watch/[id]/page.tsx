@@ -9,20 +9,7 @@ import { notFound, useParams } from 'next/navigation';
 import { doc, collection, query, where, limit, Timestamp } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-
-function YouTubePlayer({ videoId, title }: { videoId: string; title: string }) {
-    return (
-        <div className="aspect-video w-full">
-            <iframe
-                className="w-full h-full rounded-xl"
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-                title={title}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-            ></iframe>
-        </div>
-    );
-}
+import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
     return (
@@ -130,20 +117,28 @@ export default function WatchPage() {
     const params = useParams();
     const id = params.id as string;
     
-    const videoRef = useMemoFirebase(() => {
-        // This check is now safe because the component will re-render when id is available
-        if (!firestore || typeof id !== 'string') return null;
-        return doc(firestore, 'videos', id);
-    }, [firestore, id]);
-    
-    const { data: video, isLoading } = useDoc<Video>(videoRef);
-
-    // Primary loading state: either the hook is loading or we are waiting for the ref.
-    if (isLoading || !videoRef) {
+    // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
+    if (!firestore || typeof id !== 'string') {
         return <WatchPageSkeleton />;
     }
+
+    return <WatchPageContent firestore={firestore} id={id} />;
+}
+
+
+function WatchPageContent({ firestore, id }: { firestore: any, id: string }) {
+    const videoRef = useMemoFirebase(() => {
+        // 'id' is guaranteed to be a string here.
+        return doc(firestore, 'videos', id);
+    }, [firestore, id]);
+
+    const { data: video, isLoading } = useDoc<Video>(videoRef);
     
-    // Not found state: loading is finished, we had a valid ref, but no data came back.
+    if (isLoading) {
+      return <WatchPageSkeleton />;
+    }
+
+    // ONLY call notFound if loading is complete and the document is confirmed not to exist.
     if (!video) {
         notFound();
         return null;
@@ -155,7 +150,7 @@ export default function WatchPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           <div className="lg:col-span-2">
             {video.youtubeId ? (
-              <YouTubePlayer videoId={video.youtubeId} title={video.title} />
+              <CustomYouTubePlayer youtubeId={video.youtubeId} />
             ) : video.videoUrl ? (
               <MP4Player videoUrl={video.videoUrl} />
             ) : (
