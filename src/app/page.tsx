@@ -1,6 +1,7 @@
 'use client';
 import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, where, getCountFromServer, doc, deleteDoc } from 'firebase/firestore';
@@ -8,7 +9,7 @@ import type { Video, Playlist, UserProfile } from '@/lib/types';
 import { VideoCard } from "@/components/video-card";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Film, ListVideo, MoreHorizontal, PlusCircle } from 'lucide-react';
+import { Film, ListVideo, MoreHorizontal, PlusCircle, Users } from 'lucide-react';
 import { AddVideoDialog } from '@/components/add-video-dialog';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -33,6 +34,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 function VideoGridSkeleton() {
   return (
@@ -56,18 +59,19 @@ function VideoGridSkeleton() {
 
 function PlaylistListSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
-          <CardHeader>
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-4 w-full mt-2" />
-            <Skeleton className="h-4 w-2/3 mt-1" />
-          </CardHeader>
-          <CardContent>
-             <Skeleton className="h-4 w-1/4" />
-          </CardContent>
-        </Card>
+        <div key={i} className="space-y-3">
+          <Skeleton className="h-[202px] w-full rounded-xl" />
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-4/5" />
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-4 w-3/5" />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -90,7 +94,7 @@ function StatCard({ title, value, icon: Icon, isLoading }: { title: string, valu
 
 function AdminDashboard() {
     const firestore = useFirestore();
-    const [counts, setCounts] = React.useState({ videos: 0, playlists: 0 });
+    const [counts, setCounts] = React.useState({ videos: 0, playlists: 0, users: 0 });
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
@@ -100,6 +104,7 @@ function AdminDashboard() {
             try {
                 const videosCol = collection(firestore, 'videos');
                 const playlistsCol = collection(firestore, 'playlists');
+                const usersCol = collection(firestore, 'users');
 
                 const videosPromise = getCountFromServer(videosCol).catch(err => {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'videos' }));
@@ -109,15 +114,21 @@ function AdminDashboard() {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'playlists' }));
                     return { data: () => ({ count: 0 }) };
                 });
+                const usersPromise = getCountFromServer(usersCol).catch(err => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({ operation: 'list', path: 'users' }));
+                    return { data: () => ({ count: 0 }) };
+                });
                 
-                const [videosSnap, playlistsSnap] = await Promise.all([
+                const [videosSnap, playlistsSnap, usersSnap] = await Promise.all([
                     videosPromise,
                     playlistsPromise,
+                    usersPromise,
                 ]);
 
                 setCounts({
                     videos: videosSnap.data().count,
                     playlists: playlistsSnap.data().count,
+                    users: usersSnap.data().count,
                 });
             } catch (error) {
                 console.error("Error fetching admin stats:", error);
@@ -131,9 +142,10 @@ function AdminDashboard() {
     return (
         <div>
             <h1 className="text-3xl font-bold tracking-tight mb-6">Admin Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
                 <StatCard title="Total Videos" value={counts.videos} icon={Film} isLoading={isLoading} />
                 <StatCard title="Total Playlists" value={counts.playlists} icon={ListVideo} isLoading={isLoading} />
+                <StatCard title="Total Users" value={counts.users} icon={Users} isLoading={isLoading} />
             </div>
              <div className="mt-8">
                 <h2 className="text-2xl font-bold tracking-tight mb-4">All Videos</h2>
@@ -319,14 +331,40 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
     return query(collection(firestore, 'playlists'));
   }, [firestore]);
 
-  const { data: playlists, isLoading } = useCollection<Playlist>(playlistsCollection);
+  const { data: playlists, isLoading: arePlaylistsLoading } = useCollection<Playlist>(playlistsCollection);
+  
+  const firstVideoIds = React.useMemo(() => {
+      if (!playlists) return [];
+      return playlists.map(p => p.videoIds?.[0]).filter((id): id is string => !!id);
+  }, [playlists]);
+
+  const videosQuery = useMemoFirebase(() => {
+      if (!firestore || firstVideoIds.length === 0) return null;
+      // Firestore 'in' query is limited to 30 items. We'll use the first 30.
+      return query(collection(firestore, 'videos'), where('__name__', 'in', firstVideoIds.slice(0, 30)));
+  }, [firestore, JSON.stringify(firstVideoIds.slice(0, 30))]);
+
+  const { data: firstVideos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
+  
+  const videoDetailsMap = React.useMemo(() => {
+      if (!firstVideos) return new Map<string, Pick<Video, 'thumbnailUrl' | 'channel' | 'channelAvatarUrl'>>();
+      const map = new Map<string, Pick<Video, 'thumbnailUrl' | 'channel' | 'channelAvatarUrl'>>();
+      firstVideos.forEach(video => {
+          map.set(video.id, { 
+              thumbnailUrl: video.thumbnailUrl,
+              channel: video.channel,
+              channelAvatarUrl: video.channelAvatarUrl
+          });
+      });
+      return map;
+  }, [firstVideos]);
 
   const filteredPlaylists = playlists?.filter((playlist) =>
     playlist.name.toLowerCase().includes(searchQuery?.toLowerCase() ?? "") ||
     playlist.description.toLowerCase().includes(searchQuery?.toLowerCase() ?? "")
   );
 
-  if (isLoading) {
+  if (arePlaylistsLoading || areVideosLoading) {
     return <PlaylistListSkeleton />;
   }
   
@@ -340,20 +378,54 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {filteredPlaylists?.map((playlist) => (
-        <Link key={playlist.id} href={`/playlist/${playlist.id}`} className="group">
-            <Card className="h-full transition-shadow duration-300 group-hover:shadow-lg">
-              <CardHeader>
-                  <CardTitle className="line-clamp-2">{playlist.name}</CardTitle>
-                <CardDescription className="line-clamp-3 h-[60px]">{playlist.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{playlist.videoIds?.length || 0} videos</p>
-              </CardContent>
-            </Card>
-        </Link>
-      ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+      {filteredPlaylists?.map((playlist) => {
+        const firstVideoId = playlist.videoIds?.[0];
+        const videoDetails = firstVideoId ? videoDetailsMap.get(firstVideoId) : null;
+        const thumbnailUrl = videoDetails?.thumbnailUrl || 'https://picsum.photos/seed/placeholder/640/360';
+        const channel = videoDetails?.channel || 'Playlist';
+        const channelAvatarUrl = videoDetails?.channelAvatarUrl;
+
+        return (
+          <Card key={playlist.id} className="overflow-hidden border-0 shadow-none rounded-lg bg-transparent">
+            <CardContent className="p-0">
+              <Link href={`/playlist/${playlist.id}`} className="block group">
+                <div className="aspect-video overflow-hidden rounded-xl">
+                  <Image
+                    src={thumbnailUrl}
+                    alt={playlist.name}
+                    width={640}
+                    height={360}
+                    className="w-full h-full object-cover transform transition-transform duration-300 group-hover:scale-105"
+                    data-ai-hint="course thumbnail"
+                  />
+                </div>
+              </Link>
+              <div className="flex items-start gap-4 mt-3">
+                <Link href={`/playlist/${playlist.id}`}>
+                    <Avatar>
+                        {channelAvatarUrl && <AvatarImage src={channelAvatarUrl} alt={channel} />}
+                        <AvatarFallback>
+                            {channel.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                    </Avatar>
+                </Link>
+                <div className="flex-1">
+                  <Link href={`/playlist/${playlist.id}`}>
+                    <h3 className="font-semibold text-base leading-snug line-clamp-2">
+                      {playlist.name}
+                    </h3>
+                  </Link>
+                  <p className="text-sm text-muted-foreground mt-1">{channel}</p>
+                  <div className="text-sm text-muted-foreground">
+                    <span>{playlist.videoIds?.length || 0} videos</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }
@@ -441,3 +513,5 @@ export default function Home() {
     </Suspense>
   );
 }
+
+    
