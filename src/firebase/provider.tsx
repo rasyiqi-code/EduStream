@@ -144,7 +144,7 @@ export const useAuth = (): Auth => {
 
 /** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
-  const { firestore }_UNSTABLE = useFirebase();
+  const { firestore } = useFirebase();
   return firestore;
 };
 
