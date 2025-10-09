@@ -171,22 +171,6 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent className="pt-4 md:pt-0">
-         <SidebarGroup>
-          <SidebarMenu>
-             <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === `/`}
-                  tooltip="Dashboard"
-                >
-                  <Link href="/">
-                    <Home />
-                    <span>Dashboard</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>Daftar Video</SidebarGroupLabel>
           <SidebarMenu>
