@@ -27,13 +27,13 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
           width="100%"
           height="100%"
           playing
-          controls // Use react-player's own controls, not YouTube's
+          controls={true} // Use react-player's own clean controls
           config={{
             youtube: {
               playerVars: {
-                // This is the key change: force YouTube's native controls off.
+                // This is the key change: force YouTube's native controls AND top info bar off.
                 controls: 0,
-                // These are extra measures to ensure a clean player.
+                // These are extra measures to ensure a clean player, even if some are deprecated.
                 showinfo: 0,
                 autoplay: 1,
                 modestbranding: 1,
