@@ -7,7 +7,7 @@ import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound, useParams } from 'next/navigation';
 import { doc, collection, query, where, limit, Timestamp, Firestore } from 'firebase/firestore';
-import type { Video } from '@/lib/types';
+import type { Video, Playlist } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
 
@@ -26,42 +26,62 @@ function MP4Player({ videoUrl }: { videoUrl: string }) {
     );
 }
 
-function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
+function SuggestedPlaylists() {
     const firestore = useFirestore();
 
-    const suggestedQuery = useMemoFirebase(() => {
+    const playlistsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(
-            collection(firestore, 'videos'), 
-            where('__name__', '!=', currentVideoId), 
-            limit(5)
-        );
-    }, [firestore, currentVideoId]);
+        return query(collection(firestore, 'playlists'), limit(5));
+    }, [firestore]);
 
-    const { data: suggested, isLoading } = useCollection<Video>(suggestedQuery);
+    const { data: playlists, isLoading: arePlaylistsLoading } = useCollection<Playlist>(playlistsQuery);
+
+    const videoIds = React.useMemo(() => {
+        if (!playlists) return [];
+        // Get the first video ID from each playlist to fetch its thumbnail
+        return playlists.map(p => p.videoIds?.[0]).filter((id): id is string => !!id);
+    }, [playlists]);
+
+    const videosQuery = useMemoFirebase(() => {
+        if (!firestore || videoIds.length === 0) return null;
+        return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
+    }, [firestore, videoIds]);
+
+    const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
+
+    const videoThumbnails = React.useMemo(() => {
+        if (!videos) return new Map<string, string>();
+        return new Map(videos.map(v => [v.id, v.thumbnailUrl]));
+    }, [videos]);
     
-    if (isLoading) {
-        return <SuggestedVideosSkeleton />;
+    if (arePlaylistsLoading) {
+        return <SuggestedPlaylistsSkeleton />;
     }
     
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Up Next</h2>
-            {suggested?.map((video) => (
-                <Link href={`/watch/${video.id}`} key={video.id} className="flex items-start gap-4 group">
+            <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
+            {playlists?.map((playlist) => (
+                <Link href={`/playlist/${playlist.id}`} key={playlist.id} className="flex items-start gap-4 group">
                     <div className="w-40 aspect-video overflow-hidden rounded-lg shrink-0">
-                         <Image
-                            src={video.thumbnailUrl}
-                            alt={video.title}
-                            width={160}
-                            height={90}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            data-ai-hint="video thumbnail"
-                        />
+                         {playlist.videoIds?.[0] && videoThumbnails.get(playlist.videoIds[0]) ? (
+                           <Image
+                                src={videoThumbnails.get(playlist.videoIds[0])!}
+                                alt={playlist.name}
+                                width={160}
+                                height={90}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                data-ai-hint="playlist thumbnail"
+                            />
+                         ) : (
+                            <div className="w-full h-full bg-muted flex items-center justify-center">
+                                <span className="text-xs text-muted-foreground">No Thumbnail</span>
+                            </div>
+                         )}
                     </div>
                     <div>
-                        <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{video.title}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{video.channel}</p>
+                        <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{playlist.name}</h4>
+                        <p className="text-xs text-muted-foreground mt-1">{playlist.videoIds?.length || 0} video</p>
                     </div>
                 </Link>
             ))}
@@ -69,17 +89,16 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
     );
 }
 
-function SuggestedVideosSkeleton() {
+function SuggestedPlaylistsSkeleton() {
     return (
         <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Up Next</h2>
+            <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
             {Array.from({length: 5}).map((_, i) => (
                 <div key={i} className="flex items-start gap-4">
                     <Skeleton className="w-40 h-[90px] rounded-lg" />
                     <div className='flex-1 space-y-2'>
                         <Skeleton className="h-4 w-4/5" />
                         <Skeleton className="h-4 w-2/5" />
-                        <Skeleton className="h-4 w-3/5" />
                     </div>
                 </div>
             ))}
@@ -105,7 +124,7 @@ function WatchPageSkeleton() {
                 </div>
             </div>
             <aside className="lg:col-span-1">
-                <SuggestedVideosSkeleton />
+                <SuggestedPlaylistsSkeleton />
             </aside>
         </div>
     );
@@ -179,7 +198,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
             </div>
           </div>
           <aside className="lg:col-span-1">
-            <SuggestedVideos currentVideoId={video.id} />
+            <SuggestedPlaylists />
           </aside>
         </div>
     );
