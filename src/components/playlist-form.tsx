@@ -251,7 +251,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                                     return (
                                     <FormItem
                                         key={video.id}
-                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md p-2 hover:bg-accent transition-colors"
+                                        className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-2 hover:bg-accent transition-colors"
                                     >
                                         <FormControl>
                                         <Checkbox
