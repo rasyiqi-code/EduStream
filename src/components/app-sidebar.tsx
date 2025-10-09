@@ -66,14 +66,24 @@ function PlaylistItems() {
     );
 }
 
-function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, activeVideoId: string }) {
+function WatchContextSidebar() {
     const firestore = useFirestore();
     const pathname = usePathname();
+    const videoId = pathname.split('/')[2];
+
+    const videoRef = useMemoFirebase(() => {
+        if (!firestore || !videoId) return null;
+        return doc(firestore, 'videos', videoId);
+    }, [firestore, videoId]);
+
+    const { data: video, isLoading: isVideoLoading } = useDoc<Video>(videoRef);
+    
+    const firstPlaylistId = video?.playlistIds?.[0];
 
     const playlistRef = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return doc(firestore, 'playlists', playlistId);
-    }, [firestore, playlistId]);
+        if (!firestore || !firstPlaylistId) return null;
+        return doc(firestore, 'playlists', firstPlaylistId);
+    }, [firestore, firstPlaylistId]);
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
@@ -92,11 +102,12 @@ function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, acti
         return playlist.videoIds.map(id => videoMap.get(id)).filter((v): v is Video => !!v);
     }, [videos, playlist?.videoIds]);
 
-    if (isPlaylistLoading || areVideosLoading) {
+    if (isVideoLoading || isPlaylistLoading || areVideosLoading) {
         return <SidebarMenuSkeleton showIcon />;
     }
 
-    if (!playlist) {
+    if (!firstPlaylistId || !playlist) {
+      // If video is not in a playlist, fallback to all courses
       return <PlaylistItems />;
     }
 
@@ -104,7 +115,7 @@ function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, acti
         <>
             <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                    <Link href={`/playlist/${playlistId}`}>
+                    <Link href={`/playlist/${firstPlaylistId}`}>
                         <ListVideo />
                         <span className="font-semibold">{playlist?.name}</span>
                     </Link>
@@ -129,29 +140,6 @@ function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, acti
     );
 }
 
-function WatchContextSidebar() {
-    const firestore = useFirestore();
-    const pathname = usePathname();
-    const videoId = pathname.split('/')[2];
-
-    const videoRef = useMemoFirebase(() => {
-        if (!firestore || !videoId) return null;
-        return doc(firestore, 'videos', videoId);
-    }, [firestore, videoId]);
-
-    const { data: video, isLoading } = useDoc<Video>(videoRef);
-    const firstPlaylistId = video?.playlistIds?.[0];
-    
-    if (isLoading) return <SidebarMenuSkeleton showIcon />;
-    
-    if (firstPlaylistId && videoId) {
-        return <WatchPlaylist playlistId={firstPlaylistId} activeVideoId={videoId} />;
-    }
-
-    // Fallback if video is not in a playlist to show all courses
-    return <PlaylistItems />;
-}
-
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -166,6 +154,11 @@ export function AppSidebar() {
 
   const isAdmin = userProfile?.role === 'admin';
   const isWatchPage = pathname.startsWith('/watch/');
+
+  // Only render the sidebar on the watch page
+  if (!isWatchPage) {
+    return null;
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -194,9 +187,9 @@ export function AppSidebar() {
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>{isWatchPage ? "Daftar Video" : "Courses"}</SidebarGroupLabel>
+          <SidebarGroupLabel>Daftar Video</SidebarGroupLabel>
           <SidebarMenu>
-            {isWatchPage ? <WatchContextSidebar /> : <PlaylistItems />}
+             <WatchContextSidebar />
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

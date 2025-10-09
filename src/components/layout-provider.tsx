@@ -1,5 +1,7 @@
+
 'use client';
 
+import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import dynamic from 'next/dynamic';
@@ -8,8 +10,12 @@ const AppHeader = dynamic(() => import('@/components/app-header').then(mod => mo
 const AppSidebar = dynamic(() => import('@/components/app-sidebar').then(mod => mod.AppSidebar), { ssr: false });
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const isWatchPage = pathname.startsWith('/watch/');
+
     return (
-        <SidebarProvider defaultOpen={false}>
+        <SidebarProvider defaultOpen={true}>
+          {/* AppSidebar will conditionally render null, so it's safe to always include it */}
           <AppSidebar />
           <SidebarInset>
             <AppHeader />
