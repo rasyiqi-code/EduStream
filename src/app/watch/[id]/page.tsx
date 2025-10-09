@@ -129,17 +129,23 @@ export default function WatchPage() {
     const params = useParams();
     const id = params.id as string;
 
+    // Critical check: Ensure firestore and id are available before proceeding.
+    // This prevents race conditions on initial render.
+    const isReady = !!firestore && !!id;
+
     const videoRef = useMemoFirebase(() => {
-        if (!firestore || !id) return null;
+        if (!isReady) return null;
         return doc(firestore, 'videos', id);
-    }, [firestore, id]);
+    }, [isReady, firestore, id]);
     
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
-    if (isLoading || !firestore || !id) {
+    // Show skeleton while preparing the query or while loading the data.
+    if (!isReady || isLoading) {
         return <WatchPageSkeleton />;
     }
     
+    // Only call notFound if loading is complete and no video was found.
     if (!video) {
         notFound();
     }

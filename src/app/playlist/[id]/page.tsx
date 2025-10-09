@@ -99,9 +99,12 @@ function PlaylistVideos({ playlist }: { playlist: Playlist }) {
     const currentVideo = videos?.find(v => v.id === currentVideoId);
     
     // Order videos based on the `videoIds` array from the playlist
-    const orderedVideos = playlist.videoIds
-      .map(id => videos?.find(v => v.id === id))
-      .filter((v): v is Video => !!v);
+    const orderedVideos = React.useMemo(() => {
+        if (!videos) return [];
+        return playlist.videoIds
+            .map(id => videos.find(v => v.id === id))
+            .filter((v): v is Video => !!v);
+    }, [videos, playlist.videoIds]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -195,15 +198,18 @@ export default function PlaylistPage() {
     const firestore = useFirestore();
     const params = useParams();
     const id = params.id as string;
+    
+    // Critical check: Ensure firestore and id are available before proceeding.
+    const isReady = !!firestore && !!id;
 
     const playlistRef = useMemoFirebase(() => {
-        if (!firestore || !id) return null;
+        if (!isReady) return null;
         return doc(firestore, 'playlists', id);
-    }, [firestore, id]);
+    }, [isReady, firestore, id]);
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
-    if (isPlaylistLoading || !firestore || !id) {
+    if (!isReady || isPlaylistLoading) {
       return <PlaylistPageSkeleton />;
     }
 
