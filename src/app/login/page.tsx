@@ -68,7 +68,7 @@ export default function LoginPage() {
 
       demoVideos.forEach((video) => {
         const videoRef = doc(firestore, 'videos', video.id);
-        const videoData = { ...video, uploadDate: serverTimestamp() };
+        const videoData = { ...video, uploadDate: serverTimestamp(), authorRole: 'instructor' };
         delete (videoData as any).id;
         batch.set(videoRef, videoData);
       });
