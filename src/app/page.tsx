@@ -139,7 +139,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
+        <section className="w-full py-12 md:py-24 lg:py-32">
           <div className="container px-4 md:px-6 animate-in fade-in-up duration-500 delay-400">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <blockquote className="max-w-2xl mx-auto text-xl italic font-semibold text-foreground md:text-2xl">
