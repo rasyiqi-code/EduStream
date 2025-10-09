@@ -1,5 +1,6 @@
 'use client';
 import React, { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, where, getCountFromServer, doc, deleteDoc } from 'firebase/firestore';
@@ -310,11 +311,63 @@ function InstructorDashboard() {
     );
 }
 
+function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
+  const firestore = useFirestore();
+
+  const playlistsCollection = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'playlists'));
+  }, [firestore]);
+
+  const { data: playlists, isLoading } = useCollection<Playlist>(playlistsCollection);
+
+  const filteredPlaylists = playlists?.filter((playlist) =>
+    playlist.name.toLowerCase().includes(searchQuery?.toLowerCase() ?? "") ||
+    playlist.description.toLowerCase().includes(searchQuery?.toLowerCase() ?? "")
+  );
+
+  if (isLoading) {
+    return <PlaylistListSkeleton />;
+  }
+  
+  if (filteredPlaylists?.length === 0) {
+      return (
+        <div className="text-center py-10 col-span-full">
+            <h3 className="text-lg font-medium text-muted-foreground">No Courses Found</h3>
+            <p className="text-sm text-muted-foreground">Try searching for something else.</p>
+        </div>
+      )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {filteredPlaylists?.map((playlist) => (
+        <Link key={playlist.id} href={`/playlist/${playlist.id}`} className="group">
+            <Card className="h-full transition-shadow duration-300 group-hover:shadow-lg">
+              <CardHeader>
+                  <CardTitle className="line-clamp-2">{playlist.name}</CardTitle>
+                <CardDescription className="line-clamp-3 h-[60px]">{playlist.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{playlist.videoIds?.length || 0} videos</p>
+              </CardContent>
+            </Card>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function StudentDashboard() {
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get('search');
+
     return (
         <div>
-            <h1 className="text-3xl font-bold tracking-tight mb-6">Available Courses</h1>
-            <VideoGrid />
+            <h1 className="text-3xl font-bold tracking-tight mb-6">
+                {searchQuery ? `Search Results for "${searchQuery}"` : "Available Courses"}
+            </h1>
+            <PlaylistGrid searchQuery={searchQuery || undefined} />
         </div>
     )
 }
@@ -366,18 +419,10 @@ function HomePageContent() {
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
   
-  const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('search');
-
   if (isUserLoading || isProfileLoading) {
-    return <VideoGridSkeleton />;
+    return <PlaylistListSkeleton />;
   }
   
-  // Handle search explicitly for students or when no specific role dashboard is shown
-  if (searchQuery) {
-    return <VideoGrid searchQuery={searchQuery} />;
-  }
-
   switch (userProfile?.role) {
     case 'admin':
       return <AdminDashboard />;
@@ -391,7 +436,7 @@ function HomePageContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<VideoGridSkeleton />}>
+    <Suspense fallback={<PlaylistListSkeleton />}>
       <HomePageContent />
     </Suspense>
   );
