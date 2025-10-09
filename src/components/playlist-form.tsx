@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, doc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Playlist, Video } from '@/lib/types';
 import Image from 'next/image';
@@ -34,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
+import { Search } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(3, { message: 'Nama harus memiliki minimal 3 karakter.' }),
@@ -52,6 +53,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
   const { user } = useUser();
   const { toast } = useToast();
   const isEditing = !!playlist;
+  const [searchQuery, setSearchQuery] = useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,11 +66,27 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
 
   const videosQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    // Only fetch videos created by the current instructor
     return query(collection(firestore, 'videos'), where('authorId', '==', user.uid));
   }, [firestore, user]);
 
   const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
+
+  const filteredVideos = useMemo(() => {
+    if (!videos) return [];
+    
+    return videos.filter(video => {
+      const isUnassigned = !video.playlistIds || video.playlistIds.length === 0;
+      const isInCurrentPlaylist = isEditing && video.playlistIds?.includes(playlist.id);
+      
+      const matchesFilter = isEditing ? (isUnassigned || isInCurrentPlaylist) : isUnassigned;
+      
+      const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      return matchesFilter && matchesSearch;
+    });
+
+  }, [videos, searchQuery, isEditing, playlist]);
+
 
   useEffect(() => {
     if (playlist) {
@@ -84,7 +102,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
         videoIds: [],
       });
     }
-  }, [playlist, form]);
+  }, [playlist, form, isOpen]); // Rerun on isOpen to reset form when re-opening
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!firestore || !user) {
@@ -99,31 +117,38 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
     const batch = writeBatch(firestore);
 
     if (isEditing && playlist) {
-        // Update playlist
         const playlistRef = doc(firestore, 'playlists', playlist.id);
-        const updatedData = {
-          name: values.name,
-          description: values.description || '',
-          videoIds: values.videoIds,
-          authorId: user.uid, // ensure authorId is present
-        };
-        batch.update(playlistRef, updatedData);
+        
+        const originalVideoIds = playlist.videoIds || [];
+        const newVideoIds = values.videoIds;
+        const addedIds = newVideoIds.filter(id => !originalVideoIds.includes(id));
+        const removedIds = originalVideoIds.filter(id => !newVideoIds.includes(id));
 
-        // Also update the playlistIds in the associated video documents
-        const videosToUpdate = values.videoIds;
-        videosToUpdate.forEach(videoId => {
+        // Update playlist document
+        batch.update(playlistRef, {
+            name: values.name,
+            description: values.description || '',
+            videoIds: newVideoIds,
+        });
+
+        // Add playlistId to newly added videos
+        addedIds.forEach(videoId => {
             const videoRef = doc(firestore, 'videos', videoId);
-            batch.update(videoRef, {
-                playlistIds: arrayUnion(playlist.id)
-            });
+            batch.update(videoRef, { playlistIds: arrayUnion(playlist.id) });
+        });
+
+        // Remove playlistId from removed videos
+        removedIds.forEach(videoId => {
+            const videoRef = doc(firestore, 'videos', videoId);
+            batch.update(videoRef, { playlistIds: arrayRemove(playlist.id) });
         });
 
         toast({
             title: 'Playlist Diperbarui',
             description: 'Perubahan Anda telah disimpan.',
         });
+
     } else {
-        // Create new playlist
         const newPlaylistRef = doc(collection(firestore, 'playlists'));
         const newPlaylistData = {
           id: newPlaylistRef.id,
@@ -134,13 +159,9 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
         };
         batch.set(newPlaylistRef, newPlaylistData);
         
-        // Also update the playlistIds in the associated video documents
-        const videosToUpdate = values.videoIds;
-        videosToUpdate.forEach(videoId => {
+        values.videoIds.forEach(videoId => {
             const videoRef = doc(firestore, 'videos', videoId);
-            batch.update(videoRef, {
-                playlistIds: arrayUnion(newPlaylistRef.id)
-            });
+            batch.update(videoRef, { playlistIds: arrayUnion(newPlaylistRef.id) });
         });
 
         toast({
@@ -197,21 +218,31 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                 name="videoIds"
                 render={() => (
                     <FormItem>
-                    <div className="mb-4">
-                        <FormLabel className="text-base">Pilih Video</FormLabel>
-                        <FormDescription>
-                            Pilih video yang ingin Anda masukkan ke dalam playlist ini.
-                        </FormDescription>
-                    </div>
-                     <ScrollArea className="rounded-md border p-4">
+                        <div className="space-y-2">
+                            <FormLabel className="text-base">Pilih Video</FormLabel>
+                            <FormDescription>
+                                Pilih video yang ingin Anda masukkan ke dalam playlist ini.
+                            </FormDescription>
+                            <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                placeholder="Cari video..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-8"
+                                />
+                            </div>
+                        </div>
+                     <ScrollArea className="rounded-md border">
+                        <div className="p-4">
                         {areVideosLoading ? (
                              <div className="space-y-4">
                                 <Skeleton className="h-14 w-full" />
                                 <Skeleton className="h-14 w-full" />
                                 <Skeleton className="h-14 w-full" />
                             </div>
-                        ) : videos && videos.length > 0 ? (
-                            videos.map((video) => (
+                        ) : filteredVideos && filteredVideos.length > 0 ? (
+                            filteredVideos.map((video) => (
                                 <FormField
                                 key={video.id}
                                 control={form.control}
@@ -227,7 +258,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                                             checked={field.value?.includes(video.id)}
                                             onCheckedChange={(checked) => {
                                             return checked
-                                                ? field.onChange([...field.value, video.id])
+                                                ? field.onChange([...(field.value || []), video.id])
                                                 : field.onChange(
                                                     field.value?.filter(
                                                     (value) => value !== video.id
@@ -246,14 +277,20 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                                 />
                             ))
                         ) : (
-                            <p className="text-sm text-muted-foreground text-center py-10">Anda belum mengunggah video apa pun.</p>
+                            <p className="text-sm text-muted-foreground text-center py-10">
+                                {searchQuery ? "Video tidak ditemukan." : "Anda belum mengunggah video atau semua video sudah masuk playlist."}
+                            </p>
                         )}
+                        </div>
                     </ScrollArea>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
             <DialogFooter>
+               <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
+                  Batal
+                </Button>
               <Button type="submit">Simpan</Button>
             </DialogFooter>
           </form>
