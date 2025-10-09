@@ -144,7 +144,7 @@ export const useAuth = (): Auth => {
 
 /** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
-  const { firestore } = useFirebase();
+  const { firestore }_UNSTABLE = useFirebase();
   return firestore;
 };
 
@@ -154,16 +154,24 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
-type MemoFirebase <T> = T & {__memo?: boolean};
+type MemoFirebase<T> = T & { __memo?: boolean };
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+// Corrected implementation of useMemoFirebase
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const memoized = useMemo(factory, deps);
-  
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
-  
+
+  if (typeof memoized === 'object' && memoized !== null) {
+    Object.defineProperty(memoized, '__memo', {
+      value: true,
+      writable: false,
+      enumerable: false,
+    });
+  }
+
   return memoized;
 }
+
 
 /**
  * Hook specifically for accessing the authenticated user's state.

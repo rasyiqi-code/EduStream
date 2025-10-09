@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from "@/firebase";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { notFound, useParams } from 'next/navigation';
-import { doc, collection, query, where, limit } from 'firebase/firestore';
+import { doc, collection, query, where, limit, Timestamp } from 'firebase/firestore';
 import type { Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -44,6 +44,8 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
 
     const suggestedQuery = useMemoFirebase(() => {
         if (!firestore) return null;
+        // Ensure currentVideoId is a valid string before creating the query
+        if (typeof currentVideoId !== 'string' || currentVideoId === '') return null;
         return query(
             collection(firestore, 'videos'), 
             where('__name__', '!=', currentVideoId), 
@@ -53,7 +55,7 @@ function SuggestedVideos({ currentVideoId }: { currentVideoId: string }) {
 
     const { data: suggested, isLoading } = useCollection<Video>(suggestedQuery);
     
-    if (isLoading || !firestore) {
+    if (isLoading) {
         return <SuggestedVideosSkeleton />;
     }
     
@@ -131,17 +133,23 @@ export default function WatchPage() {
 
     // Critical check: Ensure firestore and id are available before proceeding.
     // This prevents race conditions on initial render.
-    const isReady = !!firestore && !!id;
+    if (!firestore || !id) {
+        return <WatchPageSkeleton />;
+    }
 
+    return <WatchPageContent firestore={firestore} id={id} />;
+}
+
+function WatchPageContent({ firestore, id }: { firestore: any; id: string }) {
     const videoRef = useMemoFirebase(() => {
-        if (!isReady) return null;
+        // ID is guaranteed to be a string here by the parent component
         return doc(firestore, 'videos', id);
-    }, [isReady, firestore, id]);
+    }, [firestore, id]);
     
     const { data: video, isLoading } = useDoc<Video>(videoRef);
 
     // Show skeleton while preparing the query or while loading the data.
-    if (!isReady || isLoading) {
+    if (isLoading) {
         return <WatchPageSkeleton />;
     }
     

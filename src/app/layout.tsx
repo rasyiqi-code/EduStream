@@ -6,6 +6,7 @@ import { FirebaseClientProvider } from '@/firebase';
 export const metadata: Metadata = {
   title: 'EduStream',
   description: 'An educational video platform for schools.',
+  icons: false,
 };
 
 export default function RootLayout({

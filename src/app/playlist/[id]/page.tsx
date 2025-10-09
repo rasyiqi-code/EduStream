@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PlayCircle } from 'lucide-react';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { collection, doc, query, where, DocumentData, Firestore } from 'firebase/firestore';
 import type { Playlist, Video } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -200,16 +200,23 @@ export default function PlaylistPage() {
     const id = params.id as string;
     
     // Critical check: Ensure firestore and id are available before proceeding.
-    const isReady = !!firestore && !!id;
+    if (!firestore || !id) {
+        return <PlaylistPageSkeleton />;
+    }
 
+    return <PlaylistPageContent firestore={firestore} id={id} />;
+}
+
+
+function PlaylistPageContent({ firestore, id }: { firestore: Firestore, id: string }) {
     const playlistRef = useMemoFirebase(() => {
-        if (!isReady) return null;
+        // ID is guaranteed to be a string here by the parent component
         return doc(firestore, 'playlists', id);
-    }, [isReady, firestore, id]);
+    }, [firestore, id]);
 
     const { data: playlist, isLoading: isPlaylistLoading } = useDoc<Playlist>(playlistRef);
     
-    if (!isReady || isPlaylistLoading) {
+    if (isPlaylistLoading) {
       return <PlaylistPageSkeleton />;
     }
 
