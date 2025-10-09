@@ -171,7 +171,6 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
 
     return (
         <div>
-            
             {isLoading ? (
                 <PlaylistListSkeleton />
             ) : playlists && playlists.length > 0 ? (
@@ -180,49 +179,46 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
                         <Card key={playlist.id}>
                             <CardHeader>
                                 <div className="flex items-start justify-between">
-                                <CardTitle className="line-clamp-2">{playlist.name}</CardTitle>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => onEdit(playlist)}>
-                                        Edit
-                                    </DropdownMenuItem>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                            Delete
+                                    <CardTitle className="line-clamp-2">{playlist.name}</CardTitle>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => onEdit(playlist)}>
+                                            Edit
                                         </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the playlist.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDelete(playlist.id)}>
-                                            Delete
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                Delete
+                                            </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the playlist.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(playlist.id)}>
+                                                Delete
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                                <CardDescription className="line-clamp-3 h-[60px]">{playlist.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-center text-sm text-muted-foreground">
+                                <div className="flex items-center text-sm text-muted-foreground pt-2">
                                     <ListVideo className="mr-1.5 h-4 w-4" />
                                     {playlist.videoIds?.length || 0} videos
                                 </div>
-                            </CardContent>
+                            </CardHeader>
                         </Card>
                     ))}
                 </div>
