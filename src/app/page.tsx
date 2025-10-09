@@ -19,7 +19,7 @@ function YouTubeLogo() {
 
 function NotebookLMLogo() {
     return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-auto" viewBox="0 0 162 24" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" width="162" height="24" viewBox="0 0 162 24" fill="currentColor" className="h-6 w-auto">
           <path d="M38.816 16.31V7.53398H42.746V14.17H49.16V16.31H38.816Z"/>
           <path d="M54.085 16.31V7.53398H64.915V9.67398H58.015V11.234H64.135V13.374H58.015V14.17H64.915V16.31H54.085Z"/>
           <path d="M70.3695 16.31V7.53398H81.1995V9.67398H74.2995V11.234H80.4195V13.374H74.2995V14.17H81.1995V16.31H70.3695Z"/>
@@ -29,6 +29,7 @@ function NotebookLMLogo() {
           <path d="M129.569 16.31V7.53398H133.499V14.17H139.919V16.31H129.569Z"/>
           <path d="M140.781 9.45798V7.53398H151.791V9.45798L147.291 16.31H144.921L148.515 10.742L140.781 9.45798Z"/>
           <path d="M153.303 16.31V7.53398H157.233V16.31H153.303Z"/>
+          <path d="M161.065 16.31V7.53398H158.457L154.897 12.518L154.753 12.722V7.53398H150.823V16.31H153.397L157.069 11.126L157.213 10.922V16.31H161.065Z"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M11.648 1H1V11.648H11.648V1ZM3 3V9.648H9.648V3H3Z"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M11.648 12.352H1V23H11.648V12.352ZM3 14.352V21H9.648V14.352H3Z"/>
           <path fillRule="evenodd" clipRule="evenodd" d="M12.352 1H23V11.648H12.352V1ZM14.352 3V9.648H21V3H14.352Z"/>
@@ -108,3 +109,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    
