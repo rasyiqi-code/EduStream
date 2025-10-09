@@ -70,7 +70,7 @@ function PlaylistPageContent({ playlist }: { playlist: Playlist & {id: string} }
 
     return (
         <div>
-             <section className="relative mb-10 overflow-hidden rounded-xl border bg-card text-card-foreground">
+             <section className="relative mb-10 overflow-hidden rounded-xl bg-card text-card-foreground">
                 <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/50 to-transparent" />
                 <div className="relative grid md:grid-cols-2 gap-6 md:gap-10 items-end p-6 md:p-8">
                     <div className="order-2 md:order-1">
