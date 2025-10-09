@@ -171,8 +171,6 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-6">
-            </div>
             
             {isLoading ? (
                 <PlaylistListSkeleton />
@@ -220,7 +218,10 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
                                 <CardDescription className="line-clamp-3 h-[60px]">{playlist.description}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-sm text-muted-foreground">{playlist.videoIds?.length || 0} videos</p>
+                                <div className="flex items-center text-sm text-muted-foreground">
+                                    <ListVideo className="mr-1.5 h-4 w-4" />
+                                    {playlist.videoIds?.length || 0} videos
+                                </div>
                             </CardContent>
                         </Card>
                     ))}
