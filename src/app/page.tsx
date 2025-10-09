@@ -110,7 +110,7 @@ export default function LandingPage() {
               </div>
               <div className="group relative mx-auto aspect-video overflow-hidden rounded-xl sm:w-full lg:order-last">
                 <Image
-                  src="https://picsum.photos/seed/education/600/400"
+                  src="https://picsum.photos/seed/elearning/600/400"
                   width="600"
                   height="400"
                   alt="Hero"
@@ -135,6 +135,16 @@ export default function LandingPage() {
                 </div>
                 <NotebookLMLogo />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-muted/50">
+          <div className="container px-4 md:px-6 animate-in fade-in-up duration-500 delay-400">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <blockquote className="max-w-2xl mx-auto text-xl italic font-semibold text-foreground md:text-2xl">
+                "Belajarlah! Karena otak yang ganggur, makin tua makin bebal."
+              </blockquote>
             </div>
           </div>
         </section>
