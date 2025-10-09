@@ -80,7 +80,7 @@ function PlaylistPageSkeleton() {
     )
 }
 
-function PlaylistVideos({ playlist }: { playlist: Playlist }) {
+function PlaylistVideos({ playlist }: { playlist: Playlist & {id: string} }) {
     const firestore = useFirestore();
     const searchParams = useSearchParams();
     const currentVideoIdParam = searchParams.get('v');
@@ -100,9 +100,10 @@ function PlaylistVideos({ playlist }: { playlist: Playlist }) {
     
     // Order videos based on the `videoIds` array from the playlist
     const orderedVideos = React.useMemo(() => {
-        if (!videos) return [];
+        if (!videos || !playlist.videoIds) return [];
+        const videoMap = new Map(videos.map(v => [v.id, v]));
         return playlist.videoIds
-            .map(id => videos.find(v => v.id === id))
+            .map(id => videoMap.get(id))
             .filter((v): v is Video => !!v);
     }, [videos, playlist.videoIds]);
 
@@ -154,7 +155,7 @@ function PlaylistVideos({ playlist }: { playlist: Playlist }) {
 
                         <div className="space-y-2 max-h-[60vh] overflow-y-auto">
                            {areVideosLoading ? (
-                                Array.from({ length: playlist.videoIds.length || 3 }).map((_, i) => (
+                                Array.from({ length: playlist.videoIds?.length || 3 }).map((_, i) => (
                                      <div key={i} className="flex items-center gap-3 p-2">
                                         <Skeleton className="w-5 h-5"/>
                                         <Skeleton className="w-[120px] h-[68px] rounded-md"/>
@@ -199,8 +200,8 @@ export default function PlaylistPage() {
     const params = useParams();
     const id = params.id as string;
     
-    // Critical check: Ensure firestore and id are available before proceeding.
-    if (!firestore || !id) {
+    // Critical Guard: Ensure firestore and a valid ID are present before proceeding.
+    if (!firestore || typeof id !== 'string') {
         return <PlaylistPageSkeleton />;
     }
 
@@ -210,7 +211,7 @@ export default function PlaylistPage() {
 
 function PlaylistPageContent({ firestore, id }: { firestore: Firestore, id: string }) {
     const playlistRef = useMemoFirebase(() => {
-        // ID is guaranteed to be a string here by the parent component
+        // 'id' is guaranteed to be a string here.
         return doc(firestore, 'playlists', id);
     }, [firestore, id]);
 
@@ -220,8 +221,10 @@ function PlaylistPageContent({ firestore, id }: { firestore: Firestore, id: stri
       return <PlaylistPageSkeleton />;
     }
 
+    // ONLY call notFound if loading is complete and the document is confirmed not to exist.
     if (!playlist) {
         notFound();
+        return null;
     }
     
     return <PlaylistVideos playlist={playlist} />;
