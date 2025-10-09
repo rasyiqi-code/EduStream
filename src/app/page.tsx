@@ -110,12 +110,12 @@ export default function LandingPage() {
               </div>
               <div className="group relative mx-auto aspect-video overflow-hidden rounded-xl sm:w-full lg:order-last">
                 <Image
-                  src="https://picsum.photos/seed/elearning/600/400"
+                  src="https://picsum.photos/seed/blackboard/600/400"
                   width="600"
                   height="400"
                   alt="Hero"
                   className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-105"
-                  data-ai-hint="elearning illustration"
+                  data-ai-hint="blackboard education"
                 />
                  <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent"></div>
               </div>
