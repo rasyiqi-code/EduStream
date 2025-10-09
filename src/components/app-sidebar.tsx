@@ -96,6 +96,10 @@ function WatchPlaylist({ playlistId, activeVideoId }: { playlistId: string, acti
         return <SidebarMenuSkeleton showIcon />;
     }
 
+    if (!playlist) {
+      return <PlaylistItems />;
+    }
+
     return (
         <>
             <SidebarMenuItem>
@@ -140,7 +144,7 @@ function WatchContextSidebar() {
     
     if (isLoading) return <SidebarMenuSkeleton showIcon />;
     
-    if (firstPlaylistId) {
+    if (firstPlaylistId && videoId) {
         return <WatchPlaylist playlistId={firstPlaylistId} activeVideoId={videoId} />;
     }
 
