@@ -267,7 +267,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                                             }}
                                         />
                                         </FormControl>
-                                        <Image src={video.thumbnailUrl} alt={video.title} width={80} height={45} className="rounded-md aspect-video object-cover" />
+                                        <Image src={video.thumbnailUrl} alt={video.title} width={106} height={60} className="rounded-md aspect-video object-cover" />
                                         <FormLabel className="font-normal w-full cursor-pointer">
                                             {video.title}
                                         </FormLabel>
