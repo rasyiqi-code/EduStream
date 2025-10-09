@@ -20,29 +20,31 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
   const videoUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
 
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
       {hasWindow ? (
-        <ReactPlayer
-          url={videoUrl}
-          width="100%"
-          height="100%"
-          playing // Autoplay the video
-          controls={true} // Use react-player's own controls
-          config={{
-            youtube: {
-              playerVars: {
-                // Hide all YouTube's native UI elements, including title, buttons, and controls
-                controls: 0, 
-                // Deprecated but included for robustness to hide title/info
-                showinfo: 0, 
-                // Do not show related videos when playback ends
-                rel: 0,
-                // Deprecated but included to attempt to reduce YouTube branding
-                modestbranding: 1
+        <>
+          <ReactPlayer
+            url={videoUrl}
+            width="100%"
+            height="100%"
+            playing
+            controls={true}
+            config={{
+              youtube: {
+                playerVars: {
+                  // This is the most important part: it hides all YouTube's native UI
+                  controls: 0, 
+                  // These are included for robustness, even if deprecated
+                  showinfo: 0, 
+                  rel: 0,
+                  modestbranding: 1
+                }
               }
-            }
-          }}
-        />
+            }}
+          />
+          {/* This overlay prevents the title from showing on hover */}
+          <div className="absolute inset-0 w-full h-full pointer-events-none"></div>
+        </>
       ) : (
         <Skeleton className="w-full h-full" />
       )}
