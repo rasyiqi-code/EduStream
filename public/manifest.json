@@ -1,0 +1,21 @@
+{
+  "name": "E-Learning MA Alhuda",
+  "short_name": "Ajhar",
+  "description": "Platform e-learning untuk siswa MA Alhuda Pangabasen.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f0f2ec",
+  "theme_color": "#84ba39",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
