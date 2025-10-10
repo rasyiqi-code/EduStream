@@ -275,7 +275,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                     className={cn(
                         "w-full transition-all duration-300",
                         isSticky
-                            ? "fixed bottom-4 right-4 z-50 w-full max-w-xs sm:max-w-sm md:max-w-md"
+                            ? "fixed bottom-4 right-4 z-50 w-full max-w-[16rem] sm:max-w-sm md:max-w-md"
                             : "relative"
                     )}
                 >
@@ -323,7 +323,3 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
         </div>
     );
 }
-
-    
-
-    
