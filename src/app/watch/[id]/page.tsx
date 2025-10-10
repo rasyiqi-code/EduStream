@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection, useUser } from "@/firebase";
@@ -25,6 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { cn } from '@/lib/utils';
 
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
@@ -225,6 +226,27 @@ export default function WatchPage() {
 
 
 function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string }) {
+    const playerContainerRef = useRef<HTMLDivElement>(null);
+    const [isSticky, setIsSticky] = useState(false);
+
+    useEffect(() => {
+        const container = playerContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const { bottom } = container.getBoundingClientRect();
+            // Become sticky when the bottom of the player is scrolled past the top of the viewport
+            if (bottom < 0) {
+                setIsSticky(true);
+            } else {
+                setIsSticky(false);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     const videoRef = useMemoFirebase(() => {
         // 'id' is guaranteed to be a string here.
         return doc(firestore, 'videos', id);
@@ -243,20 +265,33 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     }
     
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
+    
+    const placeholderHeight = playerContainerRef.current ? playerContainerRef.current.clientHeight : 0;
 
     return (
         <div className="max-w-4xl mx-auto">
-            <div className="aspect-video w-full">
-                {video.youtubeId ? (
-                    <CustomYouTubePlayer youtubeId={video.youtubeId} />
-                ) : video.videoUrl ? (
-                    <MP4Player videoUrl={video.videoUrl} />
-                ) : (
-                    <div className="aspect-video w-full bg-muted flex items-center justify-center">
-                        <p>Video source not available.</p>
-                    </div>
-                )}
+             <div ref={playerContainerRef} className="aspect-video w-full">
+                <div
+                    className={cn(
+                        "w-full transition-all duration-300",
+                        isSticky
+                            ? "fixed bottom-4 right-4 z-50 w-full max-w-sm sm:max-w-md md:max-w-lg"
+                            : "relative"
+                    )}
+                >
+                    {video.youtubeId ? (
+                        <CustomYouTubePlayer youtubeId={video.youtubeId} />
+                    ) : video.videoUrl ? (
+                        <MP4Player videoUrl={video.videoUrl} />
+                    ) : (
+                        <div className="aspect-video w-full bg-muted flex items-center justify-center">
+                            <p>Video source not available.</p>
+                        </div>
+                    )}
+                </div>
             </div>
+             {isSticky && <div style={{ height: placeholderHeight }} />}
+
             <div className="mt-4 space-y-4 px-4">
                 <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>
                 <div className="flex items-center gap-3">
@@ -288,12 +323,5 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
         </div>
     );
 }
-
-    
-
-    
-
-
-
 
     
