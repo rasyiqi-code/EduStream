@@ -16,9 +16,10 @@ function MainContent({ children }: { children: React.ReactNode }) {
     const isWatchPage = pathname.startsWith('/watch');
 
     // Conditional padding: No top padding on watch page, default padding otherwise.
+    // On watch page, also remove horizontal padding for mobile (px-0) and add it back for larger screens (sm:px-6)
     const mainClass = isWatchPage 
-        ? 'px-2 sm:px-0' 
-        : `py-4 px-2 sm:px-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1rem)]' : ''}`;
+        ? 'px-0 sm:px-6' 
+        : `py-2 px-2 sm:px-6 ${!isLandingPage ? 'pt-[calc(3.5rem+0.5rem)]' : ''}`;
     
     return (
         <main className={mainClass}>
