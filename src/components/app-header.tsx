@@ -169,28 +169,35 @@ export function AppHeader() {
 
   return (
     <header className="sticky top-0 z-10 flex h-10 items-center gap-4 bg-background/80 px-4 backdrop-blur-sm md:px-6">
-      {isWatchPage && (
+      {user && isWatchPage ? (
+        // Watch Page Header (logged in)
         <>
-          {isSidebarMobile ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={toggleSidebar}
-            >
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle Sidebar</span>
-            </Button>
-          ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden" // Only show on mobile
+            onClick={toggleSidebar}
+          >
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle Sidebar</span>
+          </Button>
+          <div className="hidden md:block">
             <SidebarTrigger />
-          )}
+          </div>
         </>
+      ) : user ? (
+        // Default Header (logged in)
+        <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
+            <Film className="h-6 w-6 text-primary" />
+            <span className="hidden md:inline-block">Ajhar</span>
+        </Link>
+      ) : (
+        // Public Header (logged out)
+        <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
+          <Film className="h-6 w-6 text-primary" />
+          <span className="hidden md:inline-block">Ajhar</span>
+        </Link>
       )}
-      
-      {!isWatchPage && <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
-        <Film className="h-6 w-6 text-primary" />
-        <span className="hidden md:inline-block">Ajhar</span>
-      </Link>}
       
       {!isLoginPage && (
           <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
