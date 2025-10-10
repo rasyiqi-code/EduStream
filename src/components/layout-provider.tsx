@@ -19,7 +19,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
     // On watch page, also remove horizontal padding for mobile (px-0) and add it back for larger screens (sm:px-6)
     const mainClass = isWatchPage 
         ? 'sm:px-6' 
-        : `px-2 py-4 sm:px-6 ${!isLandingPage ? 'pt-[calc(3rem+1rem)]' : ''}`;
+        : `px-2 py-4 sm:px-6`;
     
     return (
         <main className={mainClass}>
