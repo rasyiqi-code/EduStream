@@ -264,14 +264,14 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
             </div>
             <div className="mt-4 space-y-4">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{video.title}</h1>
-                <div className="flex items-center gap-4">
-                    <Avatar>
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                         <AvatarImage src={video.channelAvatarUrl} alt={video.channel} />
                         <AvatarFallback>{video.channel.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p className="font-semibold">{video.channel}</p>
-                        <div className="text-sm text-muted-foreground">
+                        <p className="font-semibold text-sm sm:text-base">{video.channel}</p>
+                        <div className="text-xs sm:text-sm text-muted-foreground">
                             <span>{uploadedAt}</span>
                         </div>
                     </div>
