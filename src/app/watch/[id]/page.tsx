@@ -19,6 +19,13 @@ import {
     CarouselPrevious,
   } from "@/components/ui/carousel"
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
     return (
@@ -269,10 +276,18 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                         </div>
                     </div>
                 </div>
-                 <div className="bg-card p-4 rounded-lg border">
-                    <h3 className="font-semibold mb-2">Description</h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{video.description}</p>
-                </div>
+                 <Accordion type="single" collapsible className="w-full bg-card p-4 rounded-lg">
+                    <AccordionItem value="item-1" className="border-b-0">
+                        <AccordionTrigger className="py-0 text-base font-semibold hover:no-underline">
+                        Description
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-4">
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                {video.description || "No description available."}
+                            </p>
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
           </div>
           <aside className="lg:col-span-1">
@@ -281,5 +296,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
         </div>
     );
 }
+
+    
 
     
