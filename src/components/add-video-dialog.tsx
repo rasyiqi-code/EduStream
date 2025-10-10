@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useState } from "react";
-import { useRouter }from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { PlusCircle, Clapperboard, Youtube, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -31,11 +29,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { collection, serverTimestamp, addDoc } from "firebase/firestore";
+import { useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
+import { collection, serverTimestamp, addDoc, doc } from "firebase/firestore";
 import type { Video, UserProfile } from "@/lib/types";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import { doc } from "firebase/firestore";
 import { generateVideoDescription } from "@/ai/flows/generate-video-description";
 
 const formSchema = z.object({
@@ -49,13 +46,21 @@ const formSchema = z.object({
   url: z.string().url({ message: "Please enter a valid URL." }),
 });
 
-export function AddVideoDialog() {
-  const [open, setOpen] = useState(false);
+type AddVideoDialogProps = {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  video?: Video; // Make video optional for editing
+};
+
+
+export function AddVideoDialog({ isOpen, setIsOpen, video }: AddVideoDialogProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
   const router = useRouter();
+  const isEditing = !!video;
+
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -72,6 +77,25 @@ export function AddVideoDialog() {
       url: "",
     },
   });
+
+  useEffect(() => {
+    if (isOpen && video) {
+      form.reset({
+        title: video.title,
+        description: video.description,
+        videoType: video.youtubeId ? 'youtube' : 'mp4',
+        url: video.youtubeId ? `https://www.youtube.com/watch?v=${video.youtubeId}` : video.videoUrl || '',
+      });
+    } else if (isOpen) {
+      form.reset({
+        title: "",
+        description: "",
+        videoType: "youtube",
+        url: "",
+      });
+    }
+  }, [isOpen, video, form]);
+
 
   function getYouTubeVideoId(url: string) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -117,28 +141,21 @@ export function AddVideoDialog() {
         toast({
             variant: "destructive",
             title: "Authentication Error",
-            description: "You must be logged in to add a video.",
+            description: "You must be logged in to add or edit a video.",
         });
         return;
     }
 
-    let videoData: Omit<Video, 'id'> = {
+    let videoData: Partial<Omit<Video, 'id'>> = {
       title: values.title,
       description: values.description || "",
-      thumbnailUrl: 'https://picsum.photos/seed/6/640/360',
-      uploadDate: serverTimestamp(),
-      duration: 300, // Default to 5 minutes as a placeholder
-      channel: user.displayName || "Anonymous",
-      channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
-      authorId: user.uid,
-      authorRole: userProfile.role,
-      playlistIds: [], // default to empty array
     };
-
+    
     if (values.videoType === 'youtube') {
       const youtubeId = getYouTubeVideoId(values.url);
       if (youtubeId) {
         videoData.youtubeId = youtubeId;
+        videoData.videoUrl = undefined; // Clear videoUrl if it was set before
         videoData.thumbnailUrl = `https://img.youtube.com/vi/${youtubeId}/0.jpg`;
       } else {
         toast({
@@ -150,46 +167,61 @@ export function AddVideoDialog() {
       }
     } else {
       videoData.videoUrl = values.url;
+      videoData.youtubeId = undefined; // Clear youtubeId if it was set before
     }
     
-    const videosCollection = collection(firestore, 'videos');
-    const docRefPromise = addDocumentNonBlocking(videosCollection, videoData);
+    if (isEditing && video) {
+        // Update existing video
+        const videoRef = doc(firestore, 'videos', video.id);
+        updateDocumentNonBlocking(videoRef, videoData);
+        toast({
+            title: "Video Updated!",
+            description: `${values.title} has been successfully updated.`,
+        });
+    } else {
+        // Add new video
+        let newVideoData: Omit<Video, 'id'> = {
+          ...videoData,
+          uploadDate: serverTimestamp(),
+          duration: 300, 
+          channel: user.displayName || "Anonymous",
+          channelAvatarUrl: user.photoURL || `https://picsum.photos/seed/${user.uid}/48/48`,
+          authorId: user.uid,
+          authorRole: userProfile.role,
+          playlistIds: [],
+          title: values.title,
+          description: values.description || "",
+          thumbnailUrl: videoData.thumbnailUrl || 'https://picsum.photos/seed/6/640/360',
+        };
+        const videosCollection = collection(firestore, 'videos');
+        const docRefPromise = addDocumentNonBlocking(videosCollection, newVideoData);
+    
+        toast({
+          title: "Video Added!",
+          description: `${values.title} has been successfully added.`,
+        });
 
-    toast({
-      title: "Video Added!",
-      description: `${values.title} has been successfully added.`,
-    });
+        docRefPromise.then(docRef => {
+            if(docRef) {
+                router.push(`/watch/${docRef.id}`);
+            }
+        });
+    }
 
-    form.reset();
-    setOpen(false);
-
-    // We can still wait for the ref to redirect
-    docRefPromise.then(docRef => {
-        if(docRef) {
-            router.push(`/watch/${docRef.id}`);
-        }
-    });
+    setIsOpen(false);
   }
   
   if (!userProfile || (userProfile.role !== 'admin' && userProfile.role !== 'instructor')) {
     return null;
   }
 
-
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Video
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Add a New Video</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Video' : 'Add a New Video'}</DialogTitle>
           <DialogDescription>
-            Provide details for the new educational video. You can use a direct
-            MP4 link or a YouTube URL.
+            {isEditing ? "Update the details for this video." : "Provide details for the new educational video."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -245,7 +277,7 @@ export function AddVideoDialog() {
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex space-x-4"
                     >
                       <FormItem className="flex items-center space-x-2 space-y-0">
@@ -284,12 +316,10 @@ export function AddVideoDialog() {
               )}
             />
             <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="secondary">
+              <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
                   Cancel
-                </Button>
-              </DialogClose>
-              <Button type="submit">Add Video</Button>
+              </Button>
+              <Button type="submit">{isEditing ? "Save Changes" : "Add Video"}</Button>
             </DialogFooter>
           </form>
         </Form>
@@ -297,3 +327,5 @@ export function AddVideoDialog() {
     </Dialog>
   );
 }
+
+    

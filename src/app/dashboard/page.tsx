@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, where, getCountFromServer, doc, deleteDoc } from 'firebase/firestore';
 import type { Video, Playlist, UserProfile } from '@/lib/types';
 import { VideoCard } from "@/components/video-card";
@@ -237,9 +237,14 @@ function InstructorPlaylists({ onEdit }: { onEdit: (playlist: Playlist) => void 
 function InstructorDashboard() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const { toast } = useToast();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [playlistDialogOpen, setPlaylistDialogOpen] = useState(false);
     const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | undefined>(undefined);
+
+    const [videoDialogOpen, setVideoDialogOpen] = useState(false);
+    const [selectedVideo, setSelectedVideo] = useState<Video | undefined>(undefined);
+
 
     const videosQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -255,13 +260,34 @@ function InstructorDashboard() {
     
     const handleEditPlaylist = (playlist: Playlist) => {
         setSelectedPlaylist(playlist);
-        setDialogOpen(true);
+        setPlaylistDialogOpen(true);
     };
 
     const handleAddNewPlaylist = () => {
         setSelectedPlaylist(undefined);
-        setDialogOpen(true);
+        setPlaylistDialogOpen(true);
     };
+
+    const handleEditVideo = (video: Video) => {
+        setSelectedVideo(video);
+        setVideoDialogOpen(true);
+    };
+
+    const handleAddNewVideo = () => {
+        setSelectedVideo(undefined);
+        setVideoDialogOpen(true);
+    };
+    
+    const handleDeleteVideo = (videoId: string) => {
+        if (!firestore) return;
+        const videoDocRef = doc(firestore, 'videos', videoId);
+        deleteDocumentNonBlocking(videoDocRef);
+        toast({
+            title: "Video Deleted",
+            description: "The video has been successfully deleted.",
+        });
+    };
+
 
     return (
         <div>
@@ -272,14 +298,23 @@ function InstructorDashboard() {
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Create New Playlist
                     </Button>
-                    <AddVideoDialog />
+                    <Button onClick={handleAddNewVideo}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Video
+                    </Button>
                 </div>
             </div>
 
             <PlaylistForm
-                isOpen={dialogOpen}
-                setIsOpen={setDialogOpen}
+                isOpen={playlistDialogOpen}
+                setIsOpen={setPlaylistDialogOpen}
                 playlist={selectedPlaylist}
+            />
+            
+            <AddVideoDialog 
+                isOpen={videoDialogOpen}
+                setIsOpen={setVideoDialogOpen}
+                video={selectedVideo}
             />
 
             <Tabs defaultValue="videos">
@@ -299,7 +334,44 @@ function InstructorDashboard() {
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
                         {myVideos.map((video) => (
-                            <VideoCard key={video.id} video={video} />
+                            <div key={video.id} className="relative group/card">
+                                <VideoCard video={video} />
+                                <div className="absolute top-2 right-2 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="secondary" size="icon" className="h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEditVideo(video)}>
+                                                Edit
+                                            </DropdownMenuItem>
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                    Delete
+                                                </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete the video.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteVideo(video.id)}>
+                                                    Delete
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 </TabsContent>
