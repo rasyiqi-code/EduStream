@@ -168,7 +168,7 @@ export function AppHeader() {
 
 
   return (
-    <header className="sticky top-0 z-10 flex h-12 items-center gap-4 bg-background/80 px-4 backdrop-blur-sm md:px-6">
+    <header className="sticky top-0 z-10 flex h-10 items-center gap-4 bg-background/80 px-4 backdrop-blur-sm md:px-6">
       {isWatchPage && (
         <>
           {isSidebarMobile ? (
