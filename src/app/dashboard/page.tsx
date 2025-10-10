@@ -420,14 +420,14 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
 
 function StudentDashboard() {
     const searchParams = useSearchParams();
-    const searchQuery = searchParams.get('search');
+    const searchQuery = searchParams.get('search') ?? '';
 
     return (
         <div>
             <h1 className="text-3xl font-bold tracking-tight mb-6">
                 {searchQuery ? `Search Results for "${searchQuery}"` : "Available Courses"}
             </h1>
-            <PlaylistGrid searchQuery={searchQuery || undefined} />
+            <PlaylistGrid searchQuery={searchQuery} />
         </div>
     )
 }
@@ -508,3 +508,5 @@ export default function DashboardPage() {
     </Suspense>
   );
 }
+
+    
