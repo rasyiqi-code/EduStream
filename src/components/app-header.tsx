@@ -35,7 +35,7 @@ function SearchBar() {
   return (
     <form
       onSubmit={onSearch}
-      className="ml-auto flex-1 sm:flex-initial"
+      className="ml-auto flex-1"
     >
       <div className="relative">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -44,7 +44,7 @@ function SearchBar() {
           name="search"
           placeholder="Search videos..."
           defaultValue={defaultSearch}
-          className="pl-8 sm:w-[300px] md:w-[300px] lg:w-[400px]"
+          className="pl-8 w-full"
         />
       </div>
     </form>
