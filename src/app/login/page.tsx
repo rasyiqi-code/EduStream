@@ -170,7 +170,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm animate-in fade-in-up duration-500">
+      <Card className="w-full max-w-sm animate-in fade-in-up duration-500 border-0">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
             <Film className="h-8 w-8 text-primary" />
