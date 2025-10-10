@@ -44,7 +44,7 @@ function SearchBar() {
           name="search"
           placeholder="Search videos..."
           defaultValue={defaultSearch}
-          className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+          className="pl-8 sm:w-[300px] md:w-[300px] lg:w-[400px]"
         />
       </div>
     </form>
