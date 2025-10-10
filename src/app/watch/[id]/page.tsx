@@ -75,7 +75,7 @@ function SuggestedPlaylists() {
     }
     
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-12">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
             {/* Mobile Carousel */}
             <div className="lg:hidden">
@@ -151,7 +151,7 @@ function SuggestedPlaylists() {
 
 function SuggestedPlaylistsSkeleton() {
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 mt-12">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
             {/* Mobile skeleton */}
             <div className="lg:hidden flex space-x-4 overflow-hidden">
@@ -183,24 +183,20 @@ function SuggestedPlaylistsSkeleton() {
 
 function WatchPageSkeleton() {
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-            <div className="lg:col-span-2">
-                <Skeleton className="w-full aspect-video rounded-xl" />
-                <div className="mt-4 space-y-4">
-                    <Skeleton className="h-8 w-3/4" />
-                    <div className="flex items-center gap-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className='space-y-2'>
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-4 w-48" />
-                        </div>
+        <div className="max-w-4xl mx-auto">
+            <Skeleton className="w-full aspect-video rounded-xl" />
+            <div className="mt-4 space-y-4">
+                <Skeleton className="h-8 w-3/4" />
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className='space-y-2'>
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-48" />
                     </div>
-                    <Skeleton className="h-24 w-full" />
                 </div>
+                <Skeleton className="h-24 w-full" />
             </div>
-            <aside className="lg:col-span-1">
-                <SuggestedPlaylistsSkeleton />
-            </aside>
+            <SuggestedPlaylistsSkeleton />
         </div>
     );
 }
@@ -249,8 +245,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     const uploadedAt = video.uploadDate ? new Date(video.uploadDate.seconds * 1000).toLocaleDateString() : 'N/A';
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
-          <div className="lg:col-span-2">
+        <div className="max-w-4xl mx-auto">
             <div className="aspect-video w-full">
                 {video.youtubeId ? (
                     <CustomYouTubePlayer youtubeId={video.youtubeId} />
@@ -289,10 +284,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                     </AccordionItem>
                 </Accordion>
             </div>
-          </div>
-          <aside className="lg:col-span-1">
-            <SuggestedPlaylists />
-          </aside>
+          <SuggestedPlaylists />
         </div>
     );
 }
@@ -300,3 +292,4 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     
 
     
+
