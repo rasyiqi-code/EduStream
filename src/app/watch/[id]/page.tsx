@@ -75,20 +75,20 @@ function SuggestedPlaylists() {
     }
     
     return (
-        <div className="space-y-4 mt-12">
+        <div className="space-y-4 mt-12 px-4 sm:px-0">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
             {/* Mobile Carousel */}
-            <div className="lg:hidden">
+            <div className="lg:hidden -mx-4">
                 <Carousel
                     opts={{
                         align: "start",
                         dragFree: true,
                     }}
-                    className="w-full"
+                    className="w-full pl-4"
                 >
-                    <CarouselContent>
+                    <CarouselContent className="-ml-2">
                     {playlists?.map((playlist) => (
-                        <CarouselItem key={playlist.id} className="basis-2/3 sm:basis-1/2">
+                        <CarouselItem key={playlist.id} className="basis-2/3 sm:basis-1/2 pl-2">
                              <Link href={`/playlist/${playlist.id}`} className="block group">
                                 <div className="space-y-2">
                                     <div className="aspect-video overflow-hidden rounded-lg">
@@ -151,10 +151,10 @@ function SuggestedPlaylists() {
 
 function SuggestedPlaylistsSkeleton() {
     return (
-        <div className="space-y-4 mt-12">
+        <div className="space-y-4 mt-12 px-4 sm:px-0">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
             {/* Mobile skeleton */}
-            <div className="lg:hidden flex space-x-4 overflow-hidden">
+            <div className="lg:hidden flex space-x-4 overflow-hidden -mx-4 px-4">
                  {Array.from({length: 2}).map((_, i) => (
                     <div key={i} className="space-y-2 shrink-0 w-2/3 sm:w-1/2">
                         <Skeleton className="w-full aspect-video rounded-lg" />
@@ -184,8 +184,8 @@ function SuggestedPlaylistsSkeleton() {
 function WatchPageSkeleton() {
     return (
         <div className="max-w-4xl mx-auto">
-            <Skeleton className="w-full aspect-video rounded-xl" />
-            <div className="mt-4 space-y-4">
+            <Skeleton className="w-full aspect-video" />
+            <div className="mt-4 space-y-4 px-4">
                 <Skeleton className="h-8 w-3/4" />
                 <div className="flex items-center gap-4">
                     <Skeleton className="h-12 w-12 rounded-full" />
@@ -252,12 +252,12 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                 ) : video.videoUrl ? (
                     <MP4Player videoUrl={video.videoUrl} />
                 ) : (
-                    <div className="aspect-video w-full bg-muted rounded-xl flex items-center justify-center">
+                    <div className="aspect-video w-full bg-muted flex items-center justify-center">
                         <p>Video source not available.</p>
                     </div>
                 )}
             </div>
-            <div className="mt-4 space-y-4">
+            <div className="mt-4 space-y-4 px-4">
                 <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{video.title}</h1>
                 <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
@@ -292,4 +292,5 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     
 
     
+
 
