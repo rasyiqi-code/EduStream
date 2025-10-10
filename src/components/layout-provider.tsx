@@ -13,9 +13,15 @@ const AppSidebar = dynamic(() => import('@/components/app-sidebar').then(mod => 
 function MainContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLandingPage = pathname === '/';
+    const isWatchPage = pathname.startsWith('/watch');
+
+    // Conditional padding: No top padding on watch page, default padding otherwise.
+    const mainClass = isWatchPage 
+        ? 'px-2 sm:px-0' 
+        : `py-4 px-2 sm:px-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1rem)]' : ''}`;
     
     return (
-        <main className={`py-4 px-2 sm:px-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1rem)]' : ''}`}>
+        <main className={mainClass}>
             {children}
         </main>
     );
