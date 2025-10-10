@@ -15,7 +15,7 @@ function MainContent({ children }: { children: React.ReactNode }) {
     const isLandingPage = pathname === '/';
     
     return (
-        <main className={`p-4 sm:p-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1.5rem)]' : ''}`}>
+        <main className={`p-4 sm:px-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1.5rem)]' : ''}`}>
             {children}
         </main>
     );
