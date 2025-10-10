@@ -188,13 +188,13 @@ export function AppHeader() {
       ) : user ? (
         // Default Header (logged in)
         <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
-            <Film className="h-6 w-6 text-primary" />
+            <div className="h-6 w-6 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold text-sm">A</div>
             <span className="hidden md:inline-block">Ajhar</span>
         </Link>
       ) : (
         // Public Header (logged out)
         <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">
-          <Film className="h-6 w-6 text-primary" />
+          <div className="h-6 w-6 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold text-sm">A</div>
           <span className="hidden md:inline-block">Ajhar</span>
         </Link>
       )}

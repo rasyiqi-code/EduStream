@@ -173,7 +173,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm animate-in fade-in-up duration-500 border-0">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
-            <Film className="h-8 w-8 text-primary" />
+            <div className="h-8 w-8 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold">A</div>
           </div>
           <CardTitle className="text-2xl">Selamat Datang</CardTitle>
           <CardDescription>Login untuk melanjutkan ke E-Learning MA Alhuda</CardDescription>
