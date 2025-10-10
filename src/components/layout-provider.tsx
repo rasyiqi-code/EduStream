@@ -21,7 +21,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
           {isWatchPage && <AppSidebar />}
           <SidebarInset className={!isWatchPage ? '!pl-0' : ''}>
             {!isLoginPage && <AppHeader />}
-            <main className="p-4 sm:p-6">
+            <main className={`p-4 sm:p-6 ${!isLandingPage ? 'pt-[calc(3.5rem+1.5rem)]' : ''}`}>
               {children}
             </main>
           </SidebarInset>

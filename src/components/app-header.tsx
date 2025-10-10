@@ -120,7 +120,7 @@ export function AppHeader() {
   const homeHref = user ? "/dashboard" : "/";
 
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 bg-background/80 px-4 backdrop-blur-sm md:px-6">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 bg-background/80 px-4 backdrop-blur-sm md:px-6">
       {isWatchPage && (
         <>
           {isMobile ? (
