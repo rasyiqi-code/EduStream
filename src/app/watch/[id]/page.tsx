@@ -11,6 +11,14 @@ import { doc, collection, query, where, limit, Timestamp, Firestore } from 'fire
 import type { Video, Playlist } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomYouTubePlayer } from '@/components/custom-youtube-player';
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+  } from "@/components/ui/carousel"
+import { Card, CardContent } from '@/components/ui/card';
 
 function MP4Player({ videoUrl }: { videoUrl: string }) {
     return (
@@ -46,7 +54,7 @@ function SuggestedPlaylists() {
     const videosQuery = useMemoFirebase(() => {
         if (!firestore || videoIds.length === 0) return null;
         return query(collection(firestore, 'videos'), where('__name__', 'in', videoIds));
-    }, [firestore, videoIds]);
+    }, [firestore, JSON.stringify(videoIds)]);
 
     const { data: videos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
 
@@ -55,18 +63,61 @@ function SuggestedPlaylists() {
         return new Map(videos.map(v => [v.id, v.thumbnailUrl]));
     }, [videos]);
     
-    if (arePlaylistsLoading) {
+    if (arePlaylistsLoading || areVideosLoading) {
         return <SuggestedPlaylistsSkeleton />;
     }
     
     return (
         <div className="space-y-4">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
-            {playlists?.map((playlist) => (
-                <Link href={`/playlist/${playlist.id}`} key={playlist.id} className="flex items-start gap-4 group">
-                    <div className="w-40 aspect-video overflow-hidden rounded-lg shrink-0">
-                         {playlist.videoIds?.[0] && videoThumbnails.get(playlist.videoIds[0]) ? (
-                           <Image
+            {/* Mobile Carousel */}
+            <div className="lg:hidden">
+                <Carousel
+                    opts={{
+                        align: "start",
+                        dragFree: true,
+                    }}
+                    className="w-full"
+                >
+                    <CarouselContent>
+                    {playlists?.map((playlist) => (
+                        <CarouselItem key={playlist.id} className="basis-2/3 sm:basis-1/2">
+                             <Link href={`/playlist/${playlist.id}`} className="block group">
+                                <div className="space-y-2">
+                                    <div className="aspect-video overflow-hidden rounded-lg">
+                                        {playlist.videoIds?.[0] && videoThumbnails.get(playlist.videoIds[0]) ? (
+                                        <Image
+                                            src={videoThumbnails.get(playlist.videoIds[0])!}
+                                            alt={playlist.name}
+                                            width={320}
+                                            height={180}
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            data-ai-hint="playlist thumbnail"
+                                        />
+                                        ) : (
+                                        <div className="w-full h-full bg-muted flex items-center justify-center rounded-lg">
+                                            <span className="text-xs text-muted-foreground">No Thumbnail</span>
+                                        </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{playlist.name}</h4>
+                                        <p className="text-xs text-muted-foreground mt-1">{playlist.videoIds?.length || 0} video</p>
+                                    </div>
+                                </div>
+                            </Link>
+                        </CarouselItem>
+                    ))}
+                    </CarouselContent>
+                </Carousel>
+            </div>
+            {/* Desktop List */}
+            <div className="hidden lg:block space-y-4">
+                {playlists?.map((playlist) => (
+                    <Link href={`/playlist/${playlist.id}`} key={playlist.id} className="flex items-start gap-4 group">
+                        <div className="w-40 aspect-video overflow-hidden rounded-lg shrink-0">
+                            {playlist.videoIds?.[0] && videoThumbnails.get(playlist.videoIds[0]) ? (
+                            <Image
                                 src={videoThumbnails.get(playlist.videoIds[0])!}
                                 alt={playlist.name}
                                 width={160}
@@ -74,18 +125,19 @@ function SuggestedPlaylists() {
                                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                 data-ai-hint="playlist thumbnail"
                             />
-                         ) : (
-                            <div className="w-full h-full bg-muted flex items-center justify-center">
-                                <span className="text-xs text-muted-foreground">No Thumbnail</span>
-                            </div>
-                         )}
-                    </div>
-                    <div>
-                        <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{playlist.name}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{playlist.videoIds?.length || 0} video</p>
-                    </div>
-                </Link>
-            ))}
+                            ) : (
+                                <div className="w-full h-full bg-muted flex items-center justify-center">
+                                    <span className="text-xs text-muted-foreground">No Thumbnail</span>
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-sm line-clamp-2 leading-tight">{playlist.name}</h4>
+                            <p className="text-xs text-muted-foreground mt-1">{playlist.videoIds?.length || 0} video</p>
+                        </div>
+                    </Link>
+                ))}
+            </div>
         </div>
     );
 }
@@ -94,15 +146,30 @@ function SuggestedPlaylistsSkeleton() {
     return (
         <div className="space-y-4">
             <h2 className="text-xl font-semibold">Kursus Lainnya</h2>
-            {Array.from({length: 5}).map((_, i) => (
-                <div key={i} className="flex items-start gap-4">
-                    <Skeleton className="w-40 h-[90px] rounded-lg" />
-                    <div className='flex-1 space-y-2'>
-                        <Skeleton className="h-4 w-4/5" />
-                        <Skeleton className="h-4 w-2/5" />
+            {/* Mobile skeleton */}
+            <div className="lg:hidden flex space-x-4 overflow-hidden">
+                 {Array.from({length: 2}).map((_, i) => (
+                    <div key={i} className="space-y-2 shrink-0 w-2/3 sm:w-1/2">
+                        <Skeleton className="w-full aspect-video rounded-lg" />
+                        <div className='space-y-2'>
+                            <Skeleton className="h-4 w-4/5" />
+                            <Skeleton className="h-4 w-2/5" />
+                        </div>
                     </div>
-                </div>
-            ))}
+                 ))}
+            </div>
+            {/* Desktop skeleton */}
+            <div className="hidden lg:block space-y-4">
+                {Array.from({length: 5}).map((_, i) => (
+                    <div key={i} className="flex items-start gap-4">
+                        <Skeleton className="w-40 h-[90px] rounded-lg shrink-0" />
+                        <div className='flex-1 space-y-2'>
+                            <Skeleton className="h-4 w-4/5" />
+                            <Skeleton className="h-4 w-2/5" />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
@@ -214,3 +281,5 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
         </div>
     );
 }
+
+    
