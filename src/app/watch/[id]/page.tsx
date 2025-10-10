@@ -258,7 +258,7 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
                 )}
             </div>
             <div className="mt-4 space-y-4 px-4">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">{video.title}</h1>
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">{video.title}</h1>
                 <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                         <AvatarImage src={video.channelAvatarUrl} alt={video.channel} />
@@ -294,3 +294,6 @@ function WatchPageContent({ firestore, id }: { firestore: Firestore, id: string 
     
 
 
+
+
+    
