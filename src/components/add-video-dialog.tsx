@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { useRouter }from "next/navigation";
-import { PlusCircle, Clapperboard, Youtube } from "lucide-react";
+import { PlusCircle, Clapperboard, Youtube, Sparkles } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -36,6 +36,7 @@ import { collection, serverTimestamp, addDoc } from "firebase/firestore";
 import type { Video, UserProfile } from "@/lib/types";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { doc } from "firebase/firestore";
+import { generateVideoDescription } from "@/ai/flows/generate-video-description";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -50,6 +51,7 @@ const formSchema = z.object({
 
 export function AddVideoDialog() {
   const [open, setOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user } = useUser();
@@ -76,6 +78,39 @@ export function AddVideoDialog() {
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   }
+
+  const handleGenerateDescription = async () => {
+    const title = form.getValues("title");
+    if (!title) {
+      toast({
+        variant: "destructive",
+        title: "Title is missing",
+        description: "Please enter a title before generating a description.",
+      });
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const result = await generateVideoDescription({ title });
+      if (result.description) {
+        form.setValue("description", result.description);
+        toast({
+          title: "Description Generated",
+          description: "An AI-powered description has been created.",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to generate description:", error);
+      toast({
+        variant: "destructive",
+        title: "Generation Failed",
+        description: "Could not generate a description at this time.",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !user || !userProfile) {
@@ -177,7 +212,20 @@ export function AddVideoDialog() {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleGenerateDescription}
+                      disabled={isGenerating}
+                      className="gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      {isGenerating ? "Generating..." : "Generate with AI"}
+                    </Button>
+                  </div>
                   <FormControl>
                     <Textarea
                       placeholder="A brief summary of the video content..."
