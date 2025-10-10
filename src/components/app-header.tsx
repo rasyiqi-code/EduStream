@@ -64,15 +64,15 @@ function UserNav() {
   };
 
   if (isUserLoading) {
-    return <Skeleton className="h-8 w-8 rounded-full" />;
+    return <Skeleton className="h-7 w-7 rounded-full" />;
   }
 
   if (user) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-            <Avatar className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="rounded-full h-7 w-7">
+            <Avatar className="h-7 w-7">
               <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
               <AvatarFallback>{user.displayName?.charAt(0) || user.email?.charAt(0)}</AvatarFallback>
             </Avatar>
