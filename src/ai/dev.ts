@@ -1,3 +1,3 @@
-'use client';
 // Flows will be imported for their side effects in this file.
-import './flows/generate-video-description';
+// Only import when explicitly running AI dev server
+// import './flows/generate-video-description';

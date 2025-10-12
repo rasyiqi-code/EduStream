@@ -30,7 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, serverTimestamp, addDoc, doc } from "firebase/firestore";
+import { collection, serverTimestamp, addDoc, doc, type FieldValue } from "firebase/firestore";
 import type { Video, UserProfile } from "@/lib/types";
 import { useDoc } from "@/firebase/firestore/use-doc";
 import { generateVideoDescription } from "@/ai/flows/generate-video-description";
@@ -180,7 +180,7 @@ export function AddVideoDialog({ isOpen, setIsOpen, video }: AddVideoDialogProps
         });
     } else {
         // Add new video
-        let newVideoData: Omit<Video, 'id'> = {
+        let newVideoData: Omit<Video, 'id' | 'uploadDate'> & { uploadDate: FieldValue } = {
           ...videoData,
           uploadDate: serverTimestamp(),
           duration: 300, 

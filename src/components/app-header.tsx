@@ -2,7 +2,7 @@
 'use client';
 
 import Link from "next/link";
-import { Film, Menu, Search, LogOut, ArrowLeft } from "lucide-react";
+import { Film, Menu, Search, LogOut, ArrowLeft, LogIn } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import React, { type FormEvent, Suspense, useState, useEffect } from 'react';
 
@@ -98,8 +98,16 @@ function UserNav() {
   }
 
   return (
-    <Button asChild>
-      <Link href="/login">Sign In</Link>
+    <Button
+      variant="default"
+      size="icon"
+      className="h-6 w-6 rounded-md mx-2 my-1"
+      asChild
+    >
+      <Link href="/login">
+        <LogIn className="h-4 w-4" />
+        <span className="sr-only">Sign In</span>
+      </Link>
     </Button>
   )
 }

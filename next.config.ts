@@ -1,20 +1,11 @@
 import type {NextConfig} from 'next';
-import withPWA from "@ducanh2912/next-pwa";
-
-const pwa = withPWA({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === "development",
-});
 
 const nextConfig: NextConfig = {
-  /* config options here */
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   images: {
     remotePatterns: [
@@ -50,6 +41,32 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Fix chunk loading issues
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      // Fix chunk loading in development
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: {
+              minChunks: 1,
+              priority: -20,
+              reuseExistingChunk: true,
+            },
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              priority: -10,
+              chunks: 'all',
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
 };
 
-export default pwa(nextConfig);
+export default nextConfig;

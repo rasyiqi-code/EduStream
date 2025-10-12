@@ -32,8 +32,8 @@ Untuk menjalankan proyek ini di lingkungan lokal Anda, ikuti langkah-langkah ber
 
 ### 1. Prasyarat
 
-- [Node.js](https://nodejs.org/) (versi 18 atau lebih baru)
-- `npm` atau `yarn`
+- [Bun](https://bun.sh/) (versi terbaru) - Package manager dan runtime yang cepat
+- [Node.js](https://nodejs.org/) (versi 18 atau lebih baru) - Fallback jika diperlukan
 
 ### 2. Kloning Repositori
 
@@ -47,7 +47,7 @@ cd NAMA-REPOSITORI
 Jalankan perintah berikut untuk menginstal semua paket yang dibutuhkan:
 
 ```bash
-npm install
+bun install
 ```
 
 ### 4. Konfigurasi Firebase
@@ -79,7 +79,7 @@ Aplikasi ini memerlukan koneksi ke proyek Firebase untuk otentikasi dan database
 Setelah instalasi dan konfigurasi selesai, jalankan server pengembangan:
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Buka [http://localhost:9002](http://localhost:9002) di browser Anda untuk melihat hasilnya.
@@ -87,3 +87,20 @@ Buka [http://localhost:9002](http://localhost:9002) di browser Anda untuk meliha
 ---
 
 Terima kasih telah menggunakan dan berkontribusi pada proyek ini!
+
+## ☁️ Deploy ke Vercel
+
+Untuk melakukan deploy ke Vercel:
+
+1. Push repo ke GitHub/GitLab/Bitbucket.
+2. Import project ke Vercel (Next.js terdeteksi otomatis).
+3. Atur Environment Variables di Vercel Project Settings:
+   - `GEMINI_API_KEY`: isi dengan API key Gemini Anda.
+   - (opsional, jika tidak memakai `src/firebase/config.ts`) `NEXT_PUBLIC_FIREBASE_*` sesuai konfigurasi Firebase.
+4. Build & Deploy: gunakan `bun install` dan `bun run build` untuk performa optimal.
+
+### Checklist Pasca-Deploy
+- PWA aktif di production: cek Service Worker dan Manifest via DevTools.
+- Fitur AI (Generate Deskripsi): pastikan API key terbaca dan request sukses.
+- Firebase Auth/Firestore: uji login Google dan akses data.
+- Gambar dari host eksternal tampil: `images.unsplash.com`, `img.youtube.com`, dsb.

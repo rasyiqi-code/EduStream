@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import ReactPlayer from 'react-player/youtube';
+import ReactPlayer from 'react-player';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface CustomYouTubePlayerProps {
@@ -33,12 +33,12 @@ export function CustomYouTubePlayer({ youtubeId }: CustomYouTubePlayerProps) {
             config={{
               youtube: {
                 playerVars: {
-                  controls: 1, // Show controls for better UX
-                  showinfo: 0, 
+                  controls: 1,
+                  showinfo: 0,
                   rel: 0,
-                  modestbranding: 1
-                }
-              }
+                  modestbranding: 1,
+                },
+              },
             }}
           />
         </>

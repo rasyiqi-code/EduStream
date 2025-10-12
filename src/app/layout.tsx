@@ -3,13 +3,16 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { FirebaseClientProvider } from '@/firebase';
+import { PWAInstallBanner } from '@/components/pwa-install-banner';
+import { PWAInstallModal } from '@/components/pwa-install-modal';
 
 export const metadata: Metadata = {
   title: 'E-Learning MA Alhuda',
   description: 'Platform e-learning untuk siswa MA Alhuda Pangabasen.',
   manifest: "/manifest.json",
   icons: {
-    apple: "/icons/icon-192x192.png",
+    icon: "/favicon.svg",
+    apple: "/icons/icon-192.svg",
   },
 };
 
@@ -29,6 +32,8 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <FirebaseClientProvider>
           <LayoutProvider>{children}</LayoutProvider>
+          <PWAInstallBanner />
+          <PWAInstallModal />
         </FirebaseClientProvider>
       </body>
     </html>

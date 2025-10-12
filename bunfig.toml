@@ -1,0 +1,3 @@
+[install]
+telemetry = false
+cache = true

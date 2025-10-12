@@ -158,7 +158,6 @@ type MemoFirebase<T> = T & { __memo?: boolean };
 
 // Corrected implementation of useMemoFirebase
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const memoized = useMemo(factory, deps);
 
   if (typeof memoized === 'object' && memoized !== null) {

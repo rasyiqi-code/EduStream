@@ -22,6 +22,8 @@ export type Playlist = {
   id:string;
   name: string;
   description: string;
+  /** Optional thumbnail for playlist preview; derived from first video or static data */
+  thumbnailUrl?: string;
   videoIds: string[];
   authorId?: string; // ID of the instructor who created the playlist
 };
