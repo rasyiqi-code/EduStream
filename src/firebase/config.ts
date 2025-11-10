@@ -20,6 +20,7 @@ export const firebaseConfig = {
 };
 
 // Validate required config in production
+// Note: Warnings suppressed if fallback values exist
 if (process.env.NODE_ENV === 'production') {
   const requiredEnvVars = [
     'NEXT_PUBLIC_FIREBASE_API_KEY',
@@ -30,7 +31,8 @@ if (process.env.NODE_ENV === 'production') {
   
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
-  if (missingVars.length > 0) {
+  // Only warn if NO fallback values exist (all fields would be empty)
+  if (missingVars.length > 0 && !firebaseConfig.apiKey) {
     console.error('❌ Missing required environment variables:', missingVars.join(', '));
     console.error('Please set them in your deployment platform (Vercel/Firebase/etc.)');
   }
