@@ -15,14 +15,27 @@ export function PWAInstallBanner() {
     const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000); // 24 hours
     
     if (dismissedTime && parseInt(dismissedTime) > oneDayAgo) {
+      setIsVisible(false);
       return; // Don't show if dismissed within last 24 hours
     }
 
     // Show banner if PWA can be installed and not already installed
     if (showInstallPrompt && canInstall && !isInstalled) {
       setIsVisible(true);
+    } else {
+      setIsVisible(false);
     }
   }, [showInstallPrompt, canInstall, isInstalled]);
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    dismissInstallPrompt();
+  };
+
+  const handleInstall = async () => {
+    setIsVisible(false);
+    await installApp();
+  };
 
   if (!isVisible) return null;
 
@@ -46,7 +59,7 @@ export function PWAInstallBanner() {
             
             <div className="flex gap-2 mt-3">
               <Button
-                onClick={installApp}
+                onClick={handleInstall}
                 size="sm"
                 className="text-xs h-8"
               >
@@ -54,7 +67,7 @@ export function PWAInstallBanner() {
                 Install
               </Button>
               <Button
-                onClick={dismissInstallPrompt}
+                onClick={handleDismiss}
                 variant="outline"
                 size="sm"
                 className="text-xs h-8"
@@ -65,7 +78,7 @@ export function PWAInstallBanner() {
           </div>
           
           <button
-            onClick={dismissInstallPrompt}
+            onClick={handleDismiss}
             className="flex-shrink-0 text-gray-400 hover:text-gray-600"
           >
             <X className="w-4 h-4" />
