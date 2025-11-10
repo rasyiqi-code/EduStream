@@ -132,6 +132,7 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
             name: values.name,
             description: values.description || '',
             videoIds: newVideoIds,
+            updatedAt: new Date(),
         });
 
         // Add playlistId to newly added videos
@@ -153,12 +154,15 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
 
     } else {
         const newPlaylistRef = doc(collection(firestore, 'playlists'));
+        const now = new Date();
         const newPlaylistData = {
           id: newPlaylistRef.id,
           name: values.name,
           description: values.description || '',
           videoIds: values.videoIds,
           authorId: user.uid,
+          createdAt: now,
+          updatedAt: now,
         };
         batch.set(newPlaylistRef, newPlaylistData);
         
