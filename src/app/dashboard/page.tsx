@@ -490,6 +490,17 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
     isEmpty
   } = usePaginatedCollection<Playlist>(playlistsCollection, { pageSize: 12 });
   
+  // Debug logging
+  React.useEffect(() => {
+    if (!arePlaylistsLoading) {
+      console.log('📊 Dashboard Student - Playlists:', {
+        count: playlists?.length || 0,
+        isEmpty,
+        playlists: playlists?.map(p => ({ id: p.id, name: p.name, videoIds: p.videoIds }))
+      });
+    }
+  }, [playlists, arePlaylistsLoading, isEmpty]);
+  
   const firstVideoIds = React.useMemo(() => {
       if (!playlists) return [];
       return playlists.map(p => p.videoIds?.[0]).filter((id): id is string => !!id);
@@ -502,6 +513,9 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
   }, [firestore, JSON.stringify(firstVideoIds.slice(0, 30))]);
 
   const { data: firstVideos, isLoading: areVideosLoading } = useCollection<Video>(videosQuery);
+  
+  // Don't wait for videos if there are no video IDs to fetch
+  const isActuallyLoadingVideos = firstVideoIds.length > 0 ? areVideosLoading : false;
   
   const videoDetailsMap = React.useMemo(() => {
       if (!firstVideos) return new Map<string, Pick<Video, 'thumbnailUrl' | 'channel' | 'channelAvatarUrl'>>();
@@ -526,7 +540,7 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
     );
   }, [playlists, searchQuery]);
 
-  if (arePlaylistsLoading || areVideosLoading) {
+  if (arePlaylistsLoading || isActuallyLoadingVideos) {
     return <PlaylistListSkeleton />;
   }
 
