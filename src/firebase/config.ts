@@ -31,7 +31,9 @@ if (process.env.NODE_ENV === 'production') {
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.warn('⚠️ Environment variables not set (using fallback values):', missingVars.join(', '));
-    console.warn('For production, set these in Vercel: https://vercel.com/docs/environment-variables');
+    console.error('❌ CRITICAL: Missing required environment variables in production:', missingVars.join(', '));
+    console.error('⚠️ Using hardcoded fallback values is a SECURITY RISK and MISCONFIGURATION.');
+    console.error('📝 Set these immediately in your deployment platform (Vercel/Firebase/etc.)');
+    console.error('🔗 Vercel: https://vercel.com/docs/environment-variables');
   }
 }
