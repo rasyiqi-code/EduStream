@@ -32,7 +32,7 @@ if (process.env.NODE_ENV === 'production') {
   
   if (missingVars.length > 0) {
     console.error('❌ CRITICAL: Missing required environment variables in production:', missingVars.join(', '));
-    console.error('⚠️ Using hardcoded fallback values is a SECURITY RISK and MISCONFIGURATION.');
+    console.error('⚠️  Using hardcoded fallback values is a SECURITY RISK and MISCONFIGURATION.');
     console.error('📝 Set these immediately in your deployment platform (Vercel/Firebase/etc.)');
     console.error('🔗 Vercel: https://vercel.com/docs/environment-variables');
   }
