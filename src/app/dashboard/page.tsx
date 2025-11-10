@@ -478,7 +478,9 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
 
   const playlistsCollection = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'playlists'), orderBy('createdAt', 'desc'));
+    // Temporarily remove orderBy to test if timestamps are the issue
+    return collection(firestore, 'playlists');
+    // return query(collection(firestore, 'playlists'), orderBy('createdAt', 'desc'));
   }, [firestore]);
 
   const { 
@@ -490,16 +492,34 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
     isEmpty
   } = usePaginatedCollection<Playlist>(playlistsCollection, { pageSize: 12 });
   
+  // Log any fetch errors
+  React.useEffect(() => {
+    if (playlistsCollection && !arePlaylistsLoading && isEmpty) {
+      console.warn('⚠️ Playlists query returned empty. Possible issues:');
+      console.warn('1. No playlists in database');
+      console.warn('2. Firestore Security Rules blocking read');
+      console.warn('3. Query syntax error');
+      console.warn('Check browser Network tab for failed requests');
+    }
+  }, [playlistsCollection, arePlaylistsLoading, isEmpty]);
+  
   // Debug logging
   React.useEffect(() => {
-    if (!arePlaylistsLoading) {
-      console.log('📊 Dashboard Student - Playlists:', {
-        count: playlists?.length || 0,
-        isEmpty,
-        playlists: playlists?.map(p => ({ id: p.id, name: p.name, videoIds: p.videoIds }))
-      });
-    }
-  }, [playlists, arePlaylistsLoading, isEmpty]);
+    console.log('🔍 Dashboard Debug:', {
+      hasFirestore: !!firestore,
+      hasQuery: !!playlistsCollection,
+      isLoading: arePlaylistsLoading,
+      isEmpty,
+      playlistsCount: playlists?.length || 0,
+      playlists: playlists?.map(p => ({ 
+        id: p.id, 
+        name: p.name, 
+        hasCreatedAt: !!p.createdAt,
+        hasUpdatedAt: !!p.updatedAt,
+        videoIds: p.videoIds?.length || 0
+      }))
+    });
+  }, [firestore, playlistsCollection, playlists, arePlaylistsLoading, isEmpty]);
   
   const firstVideoIds = React.useMemo(() => {
       if (!playlists) return [];
