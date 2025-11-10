@@ -18,7 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, FileText, Download, Star, Clock, Video as VideoIcon } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 function NotesPageSkeleton() {
@@ -49,6 +50,7 @@ function NotesPageContent() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
   const { notes, isLoading } = useNotes();

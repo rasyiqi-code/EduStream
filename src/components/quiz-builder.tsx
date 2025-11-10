@@ -8,7 +8,7 @@
 import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'z';
+import * as z from 'zod';
 import { useFirestore, useUser, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import type { UserProfile, Quiz, QuizQuestion, QuestionType } from '@/lib/types';
@@ -46,7 +46,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
 const questionSchema = z.object({
-  type: z.enum(['multiple_choice', 'true_false']),
+  type: z.enum(['multiple_choice', 'true_false', 'short_answer']),
   question: z.string().min(5, 'Question must be at least 5 characters'),
   options: z.array(z.string()).optional(),
   correctAnswer: z.union([z.string(), z.number()]),

@@ -45,7 +45,7 @@ export class SeedManager {
    */
   async seedDatabase(): Promise<boolean> {
     try {
-      const isSeeded = await this.isSeeded();
+      const isSeeded = await this.isSeed();
       if (isSeeded) {
         console.log('Database already seeded');
         return true;

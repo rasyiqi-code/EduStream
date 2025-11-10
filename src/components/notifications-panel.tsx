@@ -32,7 +32,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import type { NotificationType } from '@/hooks/use-notifications';
+import type { NotificationType, Notification } from '@/hooks/use-notifications';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const notificationIcons: Record<NotificationType, React.ElementType> = {
@@ -62,7 +62,7 @@ function NotificationItem({
   onMarkAsRead, 
   onDelete 
 }: { 
-  notification: any;
+  notification: Notification;
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
 }) {

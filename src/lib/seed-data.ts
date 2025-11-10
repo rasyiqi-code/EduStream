@@ -64,17 +64,20 @@ export const demoPlaylists: Playlist[] = [
     name: 'Computer Science 101',
     description: 'Fundamental concepts of computer science, from algorithms to data structures.',
     videoIds: ['intro-to-algebra', 'what-is-an-algorithm'],
+    authorId: 'demo-instructor',
   },
   {
     id: 'history-of-art',
     name: 'History of Art',
     description: 'A journey through the most significant art movements in history.',
     videoIds: ['renaissance-art'],
+    authorId: 'demo-instructor',
   },
   {
     id: 'ancient-civilizations',
     name: 'Ancient Civilizations',
     description: 'Explore the rise and fall of great empires of the ancient world.',
     videoIds: ['ancient-rome'],
+    authorId: 'demo-instructor',
   },
 ];
