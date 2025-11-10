@@ -6,6 +6,10 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { AppHeader } from '@/components/app-header';
 import { AppSidebar } from '@/components/app-sidebar';
+import { KeyboardShortcutsHelp } from "@/components/keyboard-shortcuts-help";
+import { useGlobalKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { PWAUpdateNotification } from "@/components/pwa-update-notification";
+import { EmailVerificationBanner } from "@/components/email-verification-banner";
 
 function MainContent({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
@@ -30,15 +34,21 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isWatchPage = pathname.startsWith('/watch/');
     const isLoginPage = pathname === '/login';
+    
+    // Enable global keyboard shortcuts
+    useGlobalKeyboardShortcuts();
 
     return (
         <SidebarProvider defaultOpen={true}>
           {isWatchPage && <AppSidebar />}
           <SidebarInset className={!isWatchPage ? '!pl-0' : ''}>
             {!isLoginPage && <AppHeader />}
+            {!isLoginPage && <EmailVerificationBanner />}
             <MainContent>{children}</MainContent>
           </SidebarInset>
           <Toaster />
+          <KeyboardShortcutsHelp />
+          <PWAUpdateNotification />
         </SidebarProvider>
     )
 }

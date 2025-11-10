@@ -13,7 +13,9 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'Khan Academy',
     channelAvatarUrl: 'https://picsum.photos/seed/ka/48/48',
     duration: 549,
-    playlistIds: ['cs-101'],
+    playlistId: 'cs-101', // Video belongs to one playlist in new model
+    authorId: 'demo-instructor',
+    authorRole: 'instructor',
   },
   {
     id: 'what-is-an-algorithm',
@@ -24,7 +26,9 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'CrashCourse',
     channelAvatarUrl: 'https://picsum.photos/seed/cc/48/48',
     duration: 689,
-    playlistIds: ['cs-101'],
+    playlistId: 'cs-101', // Video belongs to one playlist in new model
+    authorId: 'demo-instructor',
+    authorRole: 'instructor',
   },
   {
     id: 'renaissance-art',
@@ -35,7 +39,9 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'ArtExplorers',
     channelAvatarUrl: 'https://picsum.photos/seed/ae/48/48',
     duration: 832,
-    playlistIds: ['history-of-art'],
+    playlistId: 'history-of-art', // Video belongs to one playlist in new model
+    authorId: 'demo-instructor',
+    authorRole: 'instructor',
   },
   {
     id: 'ancient-rome',
@@ -46,7 +52,9 @@ export const demoVideos: (Omit<Video, 'uploadDate' | 'id'> & {id: string})[] = [
     channel: 'HistoryUncovered',
     channelAvatarUrl: 'https://picsum.photos/seed/hu/48/48',
     duration: 1250,
-    playlistIds: ['ancient-civilizations'],
+    playlistId: 'ancient-civilizations', // Video belongs to one playlist in new model
+    authorId: 'demo-instructor',
+    authorRole: 'instructor',
   }
 ];
 

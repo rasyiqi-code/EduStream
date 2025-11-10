@@ -9,6 +9,7 @@ import { useFirestore, useUser, addDocumentNonBlocking, updateDocumentNonBlockin
 import { collection, query, where, doc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { Playlist, Video } from '@/lib/types';
+import { notifyNewCourse } from '@/lib/notification-triggers';
 import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
@@ -75,8 +76,10 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
     if (!videos) return [];
     
     return videos.filter(video => {
-      const isUnassigned = !video.playlistIds || video.playlistIds.length === 0;
-      const isInCurrentPlaylist = isEditing && video.playlistIds?.includes(playlist.id);
+      // In new model, every video MUST have a playlistId
+      // Show videos that either don't have a playlist yet OR belong to current playlist being edited
+      const isUnassigned = !video.playlistId;
+      const isInCurrentPlaylist = isEditing && video.playlistId === playlist.id;
       
       const matchesFilter = isEditing ? (isUnassigned || isInCurrentPlaylist) : isUnassigned;
       
@@ -134,18 +137,18 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
         // Add playlistId to newly added videos
         addedIds.forEach(videoId => {
             const videoRef = doc(firestore, 'videos', videoId);
-            batch.update(videoRef, { playlistIds: arrayUnion(playlist.id) });
+            // In new model, video can only belong to one playlist
+            batch.update(videoRef, { playlistId: playlist.id });
         });
 
-        // Remove playlistId from removed videos
-        removedIds.forEach(videoId => {
-            const videoRef = doc(firestore, 'videos', videoId);
-            batch.update(videoRef, { playlistIds: arrayRemove(playlist.id) });
-        });
+        // Note: In the new model, videos MUST belong to a playlist
+        // When removing videos from playlist, we don't delete them,
+        // they just remain with their current playlistId until reassigned
+        // If you want to remove videos entirely, use separate delete functionality
 
         toast({
-            title: 'Playlist Diperbarui',
-            description: 'Perubahan Anda telah disimpan.',
+            title: 'Kursus Diperbarui',
+            description: 'Perubahan kursus Anda telah disimpan.',
         });
 
     } else {
@@ -159,15 +162,30 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
         };
         batch.set(newPlaylistRef, newPlaylistData);
         
+        // Assign videos to this new playlist
         values.videoIds.forEach(videoId => {
             const videoRef = doc(firestore, 'videos', videoId);
-            batch.update(videoRef, { playlistIds: arrayUnion(newPlaylistRef.id) });
+            batch.update(videoRef, { playlistId: newPlaylistRef.id });
         });
 
         toast({
-            title: 'Playlist Dibuat',
-            description: 'Playlist baru Anda telah dibuat.',
+            title: 'Kursus Dibuat',
+            description: 'Kursus baru berhasil dibuat. Sekarang tambahkan bab/seri video!',
         });
+        
+        // Send notification to all students about new course
+        try {
+            await notifyNewCourse(
+                firestore,
+                newPlaylistRef.id,
+                values.name,
+                user.displayName || 'Instruktur',
+                values.videoIds.length
+            );
+        } catch (error) {
+            console.error('Failed to send course notifications:', error);
+            // Don't block the flow
+        }
     }
     
     await batch.commit();
@@ -176,13 +194,13 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Edit Playlist' : 'Buat Playlist Baru'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit Kursus/Materi' : 'Buat Kursus/Materi Baru'}</DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Ubah detail playlist Anda dan pilih video yang akan dimasukkan.'
-              : 'Isi detail untuk playlist baru Anda dan pilih video.'}
+              ? 'Ubah detail kursus Anda. Bab/seri dikelola saat menambah video.'
+              : 'Buat paket materi baru. Setelah ini, tambahkan bab-bab/seri video ke dalamnya.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -192,9 +210,9 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nama Playlist</FormLabel>
+                  <FormLabel>Nama Kursus/Materi</FormLabel>
                   <FormControl>
-                    <Input placeholder="cth. Aljabar Dasar" {...field} />
+                    <Input placeholder="cth: Aljabar Dasar" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -205,9 +223,9 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Deskripsi</FormLabel>
+                  <FormLabel>Deskripsi Kursus</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Jelaskan tentang playlist ini..." {...field} />
+                    <Textarea placeholder="Jelaskan tentang materi yang akan dipelajari di kursus ini..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -219,9 +237,9 @@ export function PlaylistForm({ isOpen, setIsOpen, playlist }: PlaylistFormProps)
                 render={() => (
                     <FormItem>
                         <div className="space-y-2">
-                            <FormLabel className="text-base">Pilih Video</FormLabel>
+                            <FormLabel className="text-base">Atur Bab/Seri (Opsional)</FormLabel>
                             <FormDescription>
-                                Pilih video yang ingin Anda masukkan ke dalam playlist ini.
+                                Anda bisa tambahkan bab/seri nanti. Video baru otomatis masuk saat dibuat.
                             </FormDescription>
                             <div className="relative">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ListVideo, Film, Cog, Home, PlayCircle } from "lucide-react";
+import { ListVideo, Film, Cog, Home, PlayCircle, Heart } from "lucide-react";
 import { collection, doc, query, where } from 'firebase/firestore';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import type { Playlist, UserProfile, Video } from '@/lib/types';
@@ -78,7 +78,7 @@ function WatchContextSidebar() {
 
     const { data: video, isLoading: isVideoLoading } = useDoc<Video>(videoRef);
     
-    const firstPlaylistId = video?.playlistIds?.[0];
+    const firstPlaylistId = video?.playlistId;
 
     const playlistRef = useMemoFirebase(() => {
         if (!firestore || !firstPlaylistId) return null;
@@ -163,7 +163,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" aria-label="Course navigation">
       <SidebarRail />
       <SidebarHeader className="flex md:hidden">
         <Link href={homeHref} className="flex items-center gap-2 font-semibold text-lg">

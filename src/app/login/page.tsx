@@ -15,6 +15,8 @@ import { demoVideos, demoPlaylists } from '@/lib/seed-data';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { Skeleton } from '@/components/ui/skeleton';
+import { analytics } from '@/lib/analytics';
+import { auditLogger } from '@/lib/audit-logger';
 
 const SEEDING_FLAG = 'firestore_seeded_v2';
 
@@ -56,6 +58,15 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
+      
+      // Track login event
+      analytics.login('google');
+      
+      // Audit log
+      if (result.user) {
+        auditLogger.logUserLogin(result.user.uid, result.user.email);
+      }
+      
       // The rest of the logic is handled by the useEffect hook
       // which monitors the `user` state.
     } catch (error: any) {
@@ -169,21 +180,47 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Card className="w-full max-w-sm animate-in fade-in-up duration-500 border-0">
-        <CardHeader className="text-center">
-          <div className="flex justify-center items-center mb-4">
-            <div className="h-8 w-8 bg-primary text-primary-foreground rounded-md flex items-center justify-center font-bold">A</div>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/5 via-accent/5 to-background p-4">
+      {/* Background pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] -z-10" />
+      
+      <Card className="w-full max-w-md animate-in fade-in-up duration-500 shadow-2xl border-2">
+        <CardHeader className="text-center space-y-4 pb-8">
+          <div className="flex justify-center items-center">
+            <div className="h-16 w-16 bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg">
+              A
+            </div>
           </div>
-          <CardTitle className="text-2xl">Selamat Datang</CardTitle>
-          <CardDescription>Login untuk melanjutkan ke E-Learning MA Alhuda</CardDescription>
+          <div className="space-y-2">
+            <CardTitle className="text-3xl font-bold">Selamat Datang!</CardTitle>
+            <CardDescription className="text-base">
+              Login untuk melanjutkan ke platform E-Learning MA Alhuda
+            </CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
-          <Button variant="outline" className="w-full" onClick={handleSignIn}>
+        
+        <CardContent className="space-y-6 pb-8">
+          <Button 
+            variant="outline" 
+            className="w-full h-12 text-base border-2 hover:border-primary hover:bg-primary/5 transition-all duration-300 shadow-sm hover:shadow-md" 
+            onClick={handleSignIn}
+          >
             <GoogleIcon />
             Login dengan Google
           </Button>
+          
+          <div className="text-center text-xs text-muted-foreground space-y-1">
+            <p>Dengan login, Anda menyetujui</p>
+            <p>
+              <a href="#" className="text-primary hover:underline">Syarat & Ketentuan</a>
+              {' '} dan {' '}
+              <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a>
+            </p>
+          </div>
         </CardContent>
+        
+        {/* Decorative gradient */}
+        <div className="h-2 w-full bg-gradient-to-r from-primary via-accent to-primary" />
       </Card>
     </div>
   );

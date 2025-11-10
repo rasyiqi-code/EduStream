@@ -1,15 +1,15 @@
 {
   "name": "E-Learning MA Alhuda",
   "short_name": "Ajhar",
-  "description": "Platform e-learning untuk siswa MA Alhuda Pangabasen.",
+  "description": "Platform e-learning untuk siswa MA Alhuda Pangabasen - Belajar kapan saja, dimana saja.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f0f2ec",
-  "theme_color": "#84ba39",
-  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#8b5cf6",
+  "orientation": "any",
   "scope": "/",
   "lang": "id",
-  "categories": ["education", "productivity"],
+  "categories": ["education", "productivity", "learning"],
   "icons": [
     {
       "src": "/icons/icon-192.svg",
@@ -23,5 +23,45 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Open dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Browse",
+      "short_name": "Browse",
+      "description": "Browse all videos",
+      "url": "/browse",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Favorites",
+      "short_name": "Favorites",
+      "description": "View favorites",
+      "url": "/favorites",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Notes",
+      "short_name": "Notes",
+      "description": "View my notes",
+      "url": "/notes",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

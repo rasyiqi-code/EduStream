@@ -71,10 +71,142 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if false;
+      allow list: if isAdmin(); // Allow admins to list users for user management
       allow create: if isOwner(userId) && request.resource.data.uid == userId;
       allow update: if isExistingOwner(userId) || isAdmin();
       allow delete: if isExistingOwner(userId) || isAdmin();
+      
+      /**
+       * @description User's favorites subcollection
+       * @path /users/{userId}/favorites/{videoId}
+       * @principle User can manage their own favorites
+       */
+      match /favorites/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    /**
+     * @description User's progress tracking
+     * @path /user-progress/{userId}
+     * @principle User can track their own video watch progress
+     */
+    match /user-progress/{userId} {
+      allow read: if isOwner(userId);
+      
+      match /videos/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    /**
+     * @description User analytics (views, watch time)
+     * @path /user-analytics/{userId}
+     * @principle User can track their own analytics, admins can read all
+     */
+    match /user-analytics/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      match /views/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /watch-time/{videoId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    /**
+     * @description User notifications
+     * @path /notifications/{notificationId}
+     * @principle User can read/manage their own notifications, admins can create for all
+     */
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isAdminOrInstructor();
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+    
+    /**
+     * @description Quizzes
+     * @path /quizzes/{quizId}
+     * @principle Public read, admin/instructor write
+     */
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow write: if isAdminOrInstructor();
+    }
+    
+    /**
+     * @description User quiz attempts
+     * @path /user-quiz-attempts/{userId}/attempts/{attemptId}
+     * @principle User can read/write own attempts
+     */
+    match /user-quiz-attempts/{userId} {
+      allow read: if isOwner(userId); // Allow reading user-quiz-attempts document
+      
+      match /attempts/{attemptId} {
+        allow read, write: if isOwner(userId); // Allow querying and managing attempts
+      }
+    }
+    
+    /**
+     * @description Certificates
+     * @path /certificates/{certificateId}
+     * @principle Public read for verification, user can read own, admin can create
+     */
+    match /certificates/{certificateId} {
+      allow read: if true; // Public for verification
+      allow create: if isAdminOrInstructor();
+      allow update, delete: if isAdmin();
+    }
+    
+    /**
+     * @description User notes
+     * @path /user-notes/{userId}/notes/{noteId}
+     * @principle User can manage their own notes
+     */
+    match /user-notes/{userId} {
+      allow read: if isOwner(userId); // Allow reading user-notes document
+      
+      match /notes/{noteId} {
+        allow read, write: if isOwner(userId); // Allow querying and managing notes
+      }
+    }
+    
+    /**
+     * @description Comments
+     * @path /comments/{commentId}
+     * @principle Public read, authenticated users can create, owners can update/delete
+     */
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdminOrInstructor());
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdminOrInstructor());
+    }
+    
+    /**
+     * @description Comment votes
+     * @path /comment-votes/{userId}/votes/{commentId}
+     * @principle User can manage their own votes
+     */
+    match /comment-votes/{userId} {
+      allow read: if isOwner(userId); // Allow reading comment-votes document
+      
+      match /votes/{commentId} {
+        allow read, write: if isOwner(userId); // Allow querying and managing votes
+      }
+    }
+    
+    /**
+     * @description User stats for gamification
+     * @path /user-stats/{userId}
+     * @principle Public read for leaderboard, user can update own
+     */
+    match /user-stats/{userId} {
+      allow read: if true; // Public for leaderboard
+      allow write: if isOwner(userId) || isAdmin();
     }
 
     /**
@@ -87,10 +219,8 @@ service cloud.firestore {
      * @principle Public read access with owner-only writes, restricts write access to admins and instructors.
      */
     match /videos/{videoId} {
-      allow get, list: if true;
-      allow create: if isAdminOrInstructor();
-      allow update: if isAdminOrInstructor() && resource != null;
-      allow delete: if isAdminOrInstructor() && resource != null;
+      allow read: if true;
+      allow write: if isAdminOrInstructor();
     }
 
     /**
@@ -103,10 +233,8 @@ service cloud.firestore {
      * @principle Public read access with owner-only writes, restricts write access to admins and instructors.
      */
     match /playlists/{playlistId} {
-      allow get, list: if true;
-      allow create: if isAdminOrInstructor();
-      allow update: if isAdminOrInstructor() && resource != null;
-      allow delete: if isAdminOrInstructor() && resource != null;
+      allow read: if true;
+      allow write: if isAdminOrInstructor();
     }
   }
 }

@@ -27,6 +27,13 @@ export type GenerateVideoDescriptionOutput = z.infer<
 export async function generateVideoDescription(
   input: GenerateVideoDescriptionInput
 ): Promise<GenerateVideoDescriptionOutput> {
+  // Check if API key is configured
+  const hasApiKey = !!process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here';
+  
+  if (!hasApiKey) {
+    throw new Error('AI generation tidak tersedia. GEMINI_API_KEY belum dikonfigurasi. Dapatkan API key dari https://aistudio.google.com/app/apikey');
+  }
+  
   return generateVideoDescriptionFlow(input);
 }
 
