@@ -4,7 +4,6 @@ import './globals.css';
 import { LayoutProvider } from '@/components/layout-provider';
 import { FirebaseClientProvider } from '@/firebase';
 import { PWAInstallBanner } from '@/components/pwa-install-banner';
-import { PWAInstallModal } from '@/components/pwa-install-modal';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { SkipToContent } from '@/components/skip-to-content';
 
@@ -85,7 +84,6 @@ export default function RootLayout({
               </div>
             </LayoutProvider>
             <PWAInstallBanner />
-            <PWAInstallModal />
           </FirebaseClientProvider>
         </ErrorBoundary>
       </body>
