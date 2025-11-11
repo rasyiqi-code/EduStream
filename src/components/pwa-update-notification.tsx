@@ -10,6 +10,11 @@ export function PWAUpdateNotification() {
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
+    // PWA/Service Worker temporarily disabled
+    // Will be re-enabled when PWA configuration is properly set up
+    return;
+    
+    /* eslint-disable-next-line no-unreachable */
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
       return;
     }

@@ -3,7 +3,13 @@
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from 'firebase/firestore'
+import { 
+  getFirestore, 
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  persistentSingleTabManager
+} from 'firebase/firestore'
 
 // Firebase initialization with fallback for development
 export function initializeFirebase() {
@@ -25,9 +31,6 @@ export function initializeFirebase() {
 
     const sdks = getSdks(firebaseApp);
     
-    // Enable offline persistence for better performance
-    enableFirestoreOfflinePersistence(sdks.firestore);
-    
     return sdks;
   }
 
@@ -36,35 +39,44 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  // Initialize Firestore with persistent cache
+  const firestore = initializeFirestoreWithCache(firebaseApp);
+  
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
-    firestore: getFirestore(firebaseApp)
+    firestore
   };
 }
 
 /**
- * Enable Firestore offline persistence for better performance
+ * Initialize Firestore with persistent local cache for better performance
  * Uses multi-tab persistence in production, single-tab in development
  */
-function enableFirestoreOfflinePersistence(firestore: ReturnType<typeof getFirestore>) {
-  if (typeof window === 'undefined') return; // Server-side check
+function initializeFirestoreWithCache(firebaseApp: FirebaseApp) {
+  if (typeof window === 'undefined') {
+    // Server-side: return basic firestore without cache
+    return getFirestore(firebaseApp);
+  }
   
-  const persistenceFunction = process.env.NODE_ENV === 'production' 
-    ? enableMultiTabIndexedDbPersistence 
-    : enableIndexedDbPersistence;
-  
-  persistenceFunction(firestore).catch((err) => {
-    if (err.code === 'failed-precondition') {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time
-      console.warn('Firestore persistence failed: Multiple tabs open');
-    } else if (err.code === 'unimplemented') {
-      // Browser doesn't support persistence
-      console.warn('Firestore persistence not supported by browser');
-    } else {
-      console.error('Firestore persistence error:', err);
-    }
-  });
+  try {
+    // Use the new cache configuration API
+    const tabManager = process.env.NODE_ENV === 'production' 
+      ? persistentMultipleTabManager()
+      : persistentSingleTabManager({});
+    
+    const cacheSettings = {
+      localCache: persistentLocalCache({ tabManager })
+    };
+    
+    // Try to initialize with cache configuration
+    return initializeFirestore(firebaseApp, cacheSettings);
+  } catch (error: any) {
+    // If already initialized or other errors, fallback to getFirestore
+    // This will return the already initialized instance or initialize with defaults
+    console.warn('Failed to initialize Firestore with cache, using default:', error);
+    return getFirestore(firebaseApp);
+  }
 }
 
 export * from './provider';

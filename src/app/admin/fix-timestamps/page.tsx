@@ -46,13 +46,23 @@ export default function FixTimestampsPage() {
       snapshot.forEach((docSnapshot) => {
         const data = docSnapshot.data();
         
-        if (!data.createdAt || !data.updatedAt) {
-          logs.push(`✅ Updating: ${data.name || docSnapshot.id}`);
+        const missingCreatedAt = !data.createdAt;
+        const missingUpdatedAt = !data.updatedAt;
+        
+        if (missingCreatedAt || missingUpdatedAt) {
+          const updateData: any = {};
           
-          batch.update(doc(firestore, 'playlists', docSnapshot.id), {
-            createdAt: data.createdAt || now,
-            updatedAt: data.updatedAt || now,
-          });
+          // Only update fields that are actually missing
+          if (missingCreatedAt) {
+            updateData.createdAt = now;
+          }
+          if (missingUpdatedAt) {
+            updateData.updatedAt = now;
+          }
+          
+          logs.push(`✅ Updating: ${data.name || docSnapshot.id} (missing: ${missingCreatedAt ? 'createdAt' : ''}${missingCreatedAt && missingUpdatedAt ? ', ' : ''}${missingUpdatedAt ? 'updatedAt' : ''})`);
+          
+          batch.update(doc(firestore, 'playlists', docSnapshot.id), updateData);
           
           updateCount++;
         } else {

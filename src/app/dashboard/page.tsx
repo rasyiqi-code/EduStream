@@ -553,7 +553,7 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
     <div className="space-y-8">
       {/* Playlist Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {filteredPlaylists?.map((playlist) => {
+      {filteredPlaylists?.map((playlist, index) => {
         const firstVideoId = playlist.videoIds?.[0];
         const videoDetails = firstVideoId ? videoDetailsMap.get(firstVideoId) : null;
         const thumbnailUrl = videoDetails?.thumbnailUrl || 'https://picsum.photos/seed/placeholder/640/360';
@@ -571,6 +571,7 @@ function PlaylistGrid({ searchQuery }: { searchQuery?: string }) {
                   height={360}
                   className="w-full h-full object-cover"
                   data-ai-hint="course thumbnail"
+                  priority={index < 4}
                 />
                 
                 {/* Gradient overlay on hover */}
